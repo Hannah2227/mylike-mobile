@@ -1,0 +1,16 @@
+{
+  "format": "mylike.library",
+  "version": 2,
+  "exportedAt": "2026-11-08T04:00:00Z",
+  "source": { "kind": "douyin.likes", "label": "MyLike 公开测试样例" },
+  "order": "desktop-liked",
+  "items": [
+    {
+      "id": "7637322941528689935",
+      "title": "公开视频测试样例",
+      "author": "测试清单",
+      "publishedAt": null,
+      "kind": "video"
+    }
+  ]
+}

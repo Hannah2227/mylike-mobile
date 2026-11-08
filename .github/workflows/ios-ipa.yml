@@ -1,0 +1,69 @@
+name: Build iPhone test IPA
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-ipa-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 55
+    env:
+      EXPO_NO_TELEMETRY: '1'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.12.0
+          cache: npm
+      - name: Install and test
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+      - name: Generate the iOS project
+        run: |
+          xcodebuild -version
+          npx --no-install expo prebuild --platform ios --no-install
+          pod install --project-directory=ios
+      - name: Build for an iPhone without signing
+        run: |
+          xcodebuild -workspace ios/MyLike.xcworkspace -scheme MyLike \
+            -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/mylike-derived" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            -quiet build
+      - name: Verify and package the app
+        run: |
+          app="$RUNNER_TEMP/mylike-derived/Build/Products/Release-iphoneos/MyLike.app"
+          package="$RUNNER_TEMP/mylike-package"
+          output="$RUNNER_TEMP/mylike-artifacts"
+          test -s "$app/main.jsbundle"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$app/Info.plist")" = com.mylike.replay
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleSupportedPlatforms:0' "$app/Info.plist")" = iPhoneOS
+          executable="$(/usr/libexec/PlistBuddy -c 'Print CFBundleExecutable' "$app/Info.plist")"
+          minimum_ios="$(/usr/libexec/PlistBuddy -c 'Print MinimumOSVersion' "$app/Info.plist")"
+          xcrun lipo -verify_arch arm64 "$app/$executable"
+          mkdir -p "$package/Payload" "$output"
+          ditto "$app" "$package/Payload/MyLike.app"
+          ditto -c -k --keepParent "$package/Payload" "$output/MyLike-ios-unsigned.ipa"
+          cd "$output"
+          unzip -tq MyLike-ios-unsigned.ipa
+          shasum -a 256 MyLike-ios-unsigned.ipa > MyLike-ios-unsigned.ipa.sha256
+          printf 'Unsigned ARM64 IPA built for iOS %s and later.\n' "$minimum_ios" >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload the unsigned IPA
+        uses: actions/upload-artifact@v7
+        with:
+          name: MyLike-ios-unsigned-${{ github.run_number }}
+          path: ${{ runner.temp }}/mylike-artifacts/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7

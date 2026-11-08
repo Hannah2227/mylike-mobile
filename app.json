@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "MyLike",
+    "slug": "mylike-guest-player",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "platforms": ["ios", "android"],
+    "ios": {
+      "bundleIdentifier": "com.mylike.replay"
+    },
+    "android": {
+      "package": "com.mylike.replay"
+    }
+  }
+}

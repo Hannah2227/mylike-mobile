@@ -1,0 +1,13 @@
+node_modules/
+.expo/
+.npm-cache/
+dist/
+/ios/
+/android/
+.env
+.env.*
+*.ipa
+*.p12
+*.mobileprovision
+.DS_Store
+*.log
