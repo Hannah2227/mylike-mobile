@@ -1,22 +1,23 @@
 import { deepEqual, equal, rejects, throws } from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { parseDetail, parseInput, parseMediaDetail, resolveVideo, SAMPLE_ID } from '../src/douyin.ts';
+import { parseMediaDetail, resolveMedia } from '../src/douyin.ts';
 
+const SAMPLE_ID = '7637322941528689935';
 const mediaUrl = 'https://media.example.test/play?signature=a%2Fb';
 const detailBody = `{"status_code":0,"aweme_detail":{"aweme_id":${SAMPLE_ID},"desc":"测试",` +
   `"video":{"play_addr":{"url_list":["http://media.example.test/insecure","${mediaUrl}","${mediaUrl}"]}}}}`;
 
-test('recognizes an ID inside share text and rejects an unrelated host', () => {
-  deepEqual(parseInput(`抖音分享：https://www.douyin.com/video/${SAMPLE_ID}，复制打开`), { id: SAMPLE_ID });
-  deepEqual(parseInput('分享 https://v.douyin.com/example/'), { url: 'https://v.douyin.com/example/' });
-  throws(() => parseInput(`https://douyin.com.example.test/video/${SAMPLE_ID}`));
+test('rejects an invalid work ID before making a request', async (context) => {
+  const request = context.mock.method(globalThis, 'fetch', async () => new Response(detailBody));
+  await rejects(resolveMedia(`${SAMPLE_ID}&aid=1`), /作品 ID 无效/);
+  equal(request.mock.callCount(), 0);
 });
 
 test('preserves the exact numeric ID and signed HTTPS address', () => {
-  deepEqual(parseDetail(detailBody, SAMPLE_ID), { id: SAMPLE_ID, title: '测试', candidates: [mediaUrl] });
+  deepEqual(parseMediaDetail(detailBody, SAMPLE_ID), { id: SAMPLE_ID, title: '测试', candidates: [mediaUrl] });
   const otherId = String(BigInt(SAMPLE_ID) + 1n);
-  throws(() => parseDetail(detailBody.replace(SAMPLE_ID, otherId), SAMPLE_ID), /不同的作品 ID/);
+  throws(() => parseMediaDetail(detailBody.replace(SAMPLE_ID, otherId), SAMPLE_ID), /不同的作品 ID/);
 });
 
 test('reads the public author name for the playback caption', () => {
@@ -57,22 +58,19 @@ test('keeps gallery pages in order and separates pictures, H.264 clips and album
     { candidates: [], liveCandidates: [] },
     { candidates: [lastImageUrl], liveCandidates: [lastClip] },
   ] });
-  throws(() => parseDetail(body, SAMPLE_ID), /已取到图集详情/);
 });
 
 test('an HTTP 200 with no work data is not a successful lookup', async (context) => {
   context.mock.method(globalThis, 'fetch', async () => new Response('{"status_code":0}'));
-  const logs: string[] = [];
-  await rejects(resolveVideo(SAMPLE_ID, (message) => logs.push(message)), /没有作品数据/);
-  equal(logs.some((message) => message.startsWith('取链成功')), false);
+  await rejects(resolveMedia(SAMPLE_ID), /没有作品数据/);
 });
 
 test('the guest detail request does not send credentials', async (context) => {
   const request = context.mock.method(globalThis, 'fetch', async () => new Response(detailBody));
-  const video = await resolveVideo(SAMPLE_ID, () => undefined);
+  const video = await resolveMedia(SAMPLE_ID);
   const [url, options] = request.mock.calls[0].arguments as unknown as [string, RequestInit];
   equal(new URL(url).searchParams.get('aweme_id'), SAMPLE_ID);
   equal(options.credentials, 'omit');
   equal(new Headers(options.headers).has('cookie'), false);
-  deepEqual(video.candidates, [mediaUrl]);
+  deepEqual(video, { id: SAMPLE_ID, title: '测试', candidates: [mediaUrl] });
 });

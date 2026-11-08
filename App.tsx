@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
-import PlaybackProbe from './src/PlaybackProbe';
 import { PublicationSheet } from './src/PublicationSheet';
 import ReviewScreen from './src/ReviewScreen';
 import { useReview } from './src/use-review';
@@ -93,7 +92,6 @@ export default function App() {
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<{ file: LibraryImport; existing: number } | null>(null);
-  const [probe, setProbe] = useState(false);
   const [visible, setVisible] = useState<Set<string>>(new Set());
   const list = useRef<FlatList<LibraryWork>>(null);
   const displayedScope = useRef<LibraryScope | null>(null);
@@ -107,7 +105,7 @@ export default function App() {
   const rowHeight = PixelRatio.roundToNearestPixel(posterWidth / 0.76);
   const navigation = useRef({ enabled: false, open: () => {} });
   navigation.current = {
-    enabled: !reviewing && !review.starting && !searchFocused && !busy && !preview && !probe && !dateOpen,
+    enabled: !reviewing && !review.starting && !searchFocused && !busy && !preview && !dateOpen,
     open: () => { Keyboard.dismiss(); review.showReview(scope); },
   };
   const librarySwipe = useMemo(() => PanResponder.create({
@@ -347,10 +345,7 @@ export default function App() {
                 <View style={styles.empty}>
                   <Text style={styles.note}>{query || filter !== 'all' || period !== null ? '没有匹配的作品。' : '在桌面版导出喜欢清单，再从这里导入。'}</Text>
                   {!query && filter === 'all' && period === null && (
-                    <View style={styles.actions}>
-                      <Button label="导入清单" onPress={() => void pick()} disabled={busy} primary />
-                      <Button label="测试公开样例" onPress={() => setProbe(true)} />
-                    </View>
+                    <Button label="导入清单" onPress={() => void pick()} disabled={busy} primary />
                   )}
                 </View>
               )}
@@ -388,9 +383,6 @@ export default function App() {
               </View>
             </View>
           )}
-        </Modal>
-        <Modal animationType="slide" visible={probe} onRequestClose={() => setProbe(false)}>
-          {probe && <PlaybackProbe onClose={() => setProbe(false)} />}
         </Modal>
       </View>
     </SafeAreaProvider>

@@ -6,8 +6,15 @@ dist/
 /android/
 .env
 .env.*
+*.apk
+*.aab
 *.ipa
+*.jks
+*.keystore
 *.p12
+*.pfx
 *.mobileprovision
+*.mylike.json
+!/examples/public-sample.mylike.json
 .DS_Store
 *.log

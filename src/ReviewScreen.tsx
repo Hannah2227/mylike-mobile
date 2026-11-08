@@ -120,7 +120,7 @@ function ReviewItem({ selection, stopPlayback, checkpoint, clear, auto, rate, ac
       return;
     }
     const controller = new AbortController();
-    void resolveMedia(id, () => undefined, controller.signal).then((media) => {
+    void resolveMedia(id, controller.signal).then((media) => {
       if (controller.signal.aborted) return;
       if (mediaCache.size >= 8) {
         const oldest = mediaCache.keys().next().value;

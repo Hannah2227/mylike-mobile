@@ -4,16 +4,13 @@ const MOBILE_AGENT =
 const WORK_ID = /^[1-9]\d{15,19}$/;
 const REQUEST_TIMEOUT = 12_000;
 
-export const SAMPLE_ID = '7637322941528689935';
 export const mediaHeaders = {
   'User-Agent': MOBILE_AGENT,
   Referer: 'https://www.douyin.com/',
 };
 
 type RecordValue = Record<string, unknown>;
-type Report = (message: string) => void;
-
-export type VideoResult = {
+type VideoResult = {
   id: string;
   title: string;
   candidates: string[];
@@ -30,7 +27,7 @@ type GalleryResult = {
 
 export type MediaResult = VideoResult | GalleryResult;
 
-class ProbeError extends Error {}
+class DouyinError extends Error {}
 
 function object(value: unknown): RecordValue | undefined {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -47,81 +44,6 @@ function httpsUrl(value: unknown): URL | undefined {
     // Ignore invalid URLs returned by the platform.
   }
   return undefined;
-}
-
-function shareUrl(value: unknown): URL | undefined {
-  const url = httpsUrl(value);
-  if (url && /^(?:[a-z0-9-]+\.)*(?:douyin\.com|iesdouyin\.com)$/i.test(url.hostname)) {
-    return url;
-  }
-  return undefined;
-}
-
-function idFromUrl(url: URL): string | undefined {
-  const pathId = url.pathname.match(/\/(?:video|note)\/([1-9]\d{15,19})(?:\/|$)/)?.[1];
-  if (pathId) return pathId;
-  for (const key of ['aweme_id', 'modal_id', 'item_id']) {
-    const value = url.searchParams.get(key);
-    if (value && WORK_ID.test(value)) return value;
-  }
-  return undefined;
-}
-
-export function parseInput(value: string): { id: string } | { url: string } {
-  const text = value.trim();
-  if (WORK_ID.test(text)) return { id: text };
-
-  for (const match of text.matchAll(/https:\/\/[^\s<>"'，。；！？）】]+/gi)) {
-    const url = shareUrl(match[0].replace(/[.,;!?]+$/, ''));
-    if (!url) continue;
-    const id = idFromUrl(url);
-    if (id) return { id };
-    if (url.hostname === 'v.douyin.com') return { url: url.href };
-  }
-  throw new ProbeError('请输入抖音分享链接、作品长链接，或作品 ID。');
-}
-
-async function resolveId(value: string, report: Report): Promise<string> {
-  const target = parseInput(value);
-  if ('id' in target) return target.id;
-
-  report('短链：正在跟随抖音分享链接的跳转');
-  return withRequest(target.url, '短链', async (response) => {
-    const url = shareUrl(response.url);
-    const id = url && idFromUrl(url);
-    report(`短链：HTTP ${response.status}，${url?.hostname ?? '未识别跳转地址'}`);
-    if (!id) throw new ProbeError('短链跳转后没有作品 ID，请改用长链接或 ID。');
-    return id;
-  });
-}
-
-async function withRequest<T>(
-  url: string,
-  stage: string,
-  read: (response: Response) => Promise<T>,
-  signal?: AbortSignal,
-): Promise<T> {
-  if (signal?.aborted) throw new ProbeError('已取消取链。');
-  const controller = new AbortController();
-  const cancel = () => controller.abort();
-  signal?.addEventListener('abort', cancel, { once: true });
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
-  try {
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: { 'User-Agent': MOBILE_AGENT, Accept: 'application/json, text/plain, */*' },
-      credentials: 'omit',
-      signal: controller.signal,
-    });
-    return await read(response);
-  } catch (error) {
-    if (controller.signal.aborted) throw new ProbeError(`${stage}请求超时（12 秒）。`);
-    if (error instanceof ProbeError) throw error;
-    throw new ProbeError(`${stage}请求失败，检查 iPhone 能否访问抖音网络。`);
-  } finally {
-    clearTimeout(timer);
-    signal?.removeEventListener('abort', cancel);
-  }
 }
 
 function mediaUrls(...lists: unknown[]): string[] {
@@ -150,18 +72,18 @@ export function parseMediaDetail(body: string, id: string): MediaResult {
     );
     payload = object(JSON.parse(safeBody));
   } catch {
-    throw new ProbeError('详情响应不是 JSON，可能是验证页或接口限制。');
+    throw new DouyinError('详情响应不是 JSON，可能是验证页或接口限制。');
   }
   if (payload?.status_code !== 0 && payload?.status_code !== '0') {
     const code = payload?.status_code;
     const status = typeof code === 'number' || (typeof code === 'string' && /^-?\d+$/.test(code))
       ? String(code)
       : '缺失';
-    throw new ProbeError(`抖音未返回成功状态（status_code: ${status}）。`);
+    throw new DouyinError(`抖音未返回成功状态（status_code: ${status}）。`);
   }
   const detail = object(payload.aweme_detail);
-  if (!detail) throw new ProbeError('详情响应没有作品数据；游客请求可能未获放行。');
-  if (detail.aweme_id !== id) throw new ProbeError('详情返回了不同的作品 ID，已停止播放。');
+  if (!detail) throw new DouyinError('详情响应没有作品数据，游客请求可能未获放行。');
+  if (detail.aweme_id !== id) throw new DouyinError('详情返回了不同的作品 ID，已停止播放。');
   const title = typeof detail.desc === 'string' && detail.desc.trim() ? detail.desc.trim() : '抖音视频';
   const author = displayText(object(detail.author)?.nickname);
   const common = { id, title, ...(author && { author }) };
@@ -182,7 +104,7 @@ export function parseMediaDetail(body: string, id: string): MediaResult {
       };
     });
     if (!images.some((image) => image.candidates.length))
-      throw new ProbeError('已取到图集详情，但没有可用的 HTTPS 图片地址。');
+      throw new DouyinError('已取到图集详情，但没有可用的 HTTPS 图片地址。');
     const music = object(detail.music);
     const matchedSound = object(music?.matched_pgc_sound);
     const musicCandidates = mediaUrls(
@@ -192,39 +114,40 @@ export function parseMediaDetail(body: string, id: string): MediaResult {
   }
   const video = object(detail.video);
   const candidates = mediaUrls(object(video?.play_addr_h264)?.url_list, object(video?.play_addr)?.url_list);
-  if (!candidates.length) throw new ProbeError('已取到详情，但没有可用的 HTTPS 视频地址。');
+  if (!candidates.length) throw new DouyinError('已取到详情，但没有可用的 HTTPS 视频地址。');
   return { ...common, candidates };
 }
 
-function requireVideo(result: MediaResult): VideoResult {
-  if ('images' in result)
-    throw new ProbeError(`已取到图集详情（${result.images.length} 张图）；本次请用普通视频测试。`);
-  return result;
-}
+export async function resolveMedia(id: string, signal?: AbortSignal): Promise<MediaResult> {
+  if (!WORK_ID.test(id)) throw new DouyinError('作品 ID 无效。');
+  if (signal?.aborted) throw new DouyinError('已取消取链。');
 
-export function parseDetail(body: string, id: string): VideoResult {
-  return requireVideo(parseMediaDetail(body, id));
-}
-
-export async function resolveMedia(value: string, report: Report, signal?: AbortSignal): Promise<MediaResult> {
-  const id = await resolveId(value, report);
-  report(`作品 ID：${id}`);
   const url = `https://${DETAIL_HOST}/aweme/v1/aweme/detail/` +
     `?aweme_id=${id}&aid=6383&device_platform=web&version_code=190500&version_name=19.5.0`;
-  report(`详情：GET ${DETAIL_HOST}（游客）`);
-  return withRequest(url, '详情', async (response) => {
-    report(`详情：HTTP ${response.status}`);
-    if (!response.ok) throw new ProbeError(`详情请求被拒绝（HTTP ${response.status}）。`);
+  const controller = new AbortController();
+  const cancel = () => controller.abort();
+  signal?.addEventListener('abort', cancel, { once: true });
+  const timer = setTimeout(cancel, REQUEST_TIMEOUT);
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { 'User-Agent': MOBILE_AGENT, Accept: 'application/json, text/plain, */*' },
+      credentials: 'omit',
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new DouyinError(`详情请求被拒绝（HTTP ${response.status}）。`);
     const body = await response.text();
-    if (!body.trim()) throw new ProbeError('详情响应为空；HTTP 200 不代表取链成功。');
+    if (!body.trim()) throw new DouyinError('详情响应为空。');
     return parseMediaDetail(body, id);
-  }, signal);
-}
-
-export async function resolveVideo(value: string, report: Report): Promise<VideoResult> {
-  const result = requireVideo(await resolveMedia(value, report));
-  report(`取链成功：${result.candidates.length} 个视频地址`);
-  return result;
+  } catch (error) {
+    if (signal?.aborted) throw new DouyinError('已取消取链。');
+    if (controller.signal.aborted) throw new DouyinError('详情请求超时（12 秒）。');
+    if (error instanceof DouyinError) throw error;
+    throw new DouyinError('详情请求失败，请检查手机能否访问抖音。');
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener('abort', cancel);
+  }
 }
 
 export function redactMediaUrls(message: string): string {
