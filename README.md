@@ -38,11 +38,19 @@ Expo 登录仅用于打开开发项目，不需要付费 Apple 开发者账号�
 
 如果 `expo login` 在 Windows 自动打开浏览器时退出，可以在当前 PowerShell 运行 `$env:BROWSER = 'none'`，再运行 `npx.cmd expo login`。保持终端运行，用电脑浏览器打开这次新打印的完整链接。登录完成后用 `npx.cmd expo whoami` 确认账号，再启动 Metro。如果你使用 Expo 用户名和密码，也可运行 `npx.cmd expo login --no-browser`，按提示在终端输入。
 
-## 在 Android 上打开
+## 在 Android 上用 Expo Go 调试
 
 1. 在 Android 手机安装支持 SDK 58 的 [Expo Go](https://expo.dev/go)，将手机和电脑连到同一个 Wi-Fi。
 2. 在 Windows 按上面的命令启动开发服务器，在 Android 的 Expo Go 内扫终端二维码。若提示账号不匹配，在手机和 CLI 登录同一个 Expo 账号。
 3. 在内容库右上菜单选择「导入清单」，从手机文件选择器打开 JSON。进入回看后用系统返回手势或返回键回到内容库，并确认播放停止。
+
+## 在 Android 上安装独立测试包
+
+1. 在 GitHub 打开 **Actions → Build Android test APK → Run workflow**。完成后从 **Artifacts** 下载 `MyLike-android-test-…`，解压得到 `MyLike-android-test.apk`。
+2. 在雷电等模拟器里用侧栏的「安装 APK」选择解压出的文件。若要测试和手机相近的下载流程，可把 APK 放到模拟器的「下载」目录，从 Android 文件管理器打开，按系统提示允许安装。优先用 Android 9 或更新的模拟器实例。
+3. 从 Android 主屏幕打开 MyLike，导入同一份清单，再按下方清单验证播放和续播。独立包内已包含 JS，无需运行 Metro 或 Expo Go。
+
+这个 Release 测试包使用 Expo 模板的调试证书。正式发布前要换发布证书。Android 只允许相同签名的包直接覆盖升级，测试库需要保留时可保存原始 JSON 以便重导。
 
 ## 真机验收
 

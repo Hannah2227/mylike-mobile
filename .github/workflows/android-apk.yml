@@ -1,0 +1,71 @@
+name: Build Android test APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      EXPO_NO_TELEMETRY: '1'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.12.0
+          cache: npm
+      - name: Install and test
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+      - name: Generate the Android project
+        run: npx --no-install expo prebuild --platform android --no-install
+      - name: Build the standalone APK
+        working-directory: android
+        run: |
+          export JAVA_HOME="$JAVA_HOME_17_X64"
+          export PATH="$JAVA_HOME/bin:$PATH"
+          # The SDK publishes API 37 as android-37.0, while compileSdk is 37.
+          if [ ! -e "$ANDROID_HOME/platforms/android-37" ] && [ -d "$ANDROID_HOME/platforms/android-37.0" ]; then
+            ln -s android-37.0 "$ANDROID_HOME/platforms/android-37"
+          fi
+          # Expo's generated Release build uses its bundled debug certificate for local testing.
+          ./gradlew :app:assembleRelease --no-daemon --max-workers=2
+      - name: Verify and package the APK
+        run: |
+          apk="android/app/build/outputs/apk/release/app-release.apk"
+          tools="$ANDROID_HOME/build-tools/37.0.0"
+          output="$RUNNER_TEMP/mylike-artifacts"
+          "$tools/apksigner" verify --print-certs "$apk"
+          badging=$("$tools/aapt2" dump badging "$apk")
+          grep -q "^package: name='com.mylike.replay'" <<< "$badging"
+          unzip -p "$apk" assets/index.android.bundle > "$RUNNER_TEMP/mylike-android.bundle"
+          test -s "$RUNNER_TEMP/mylike-android.bundle"
+          unzip -Z1 "$apk" > "$RUNNER_TEMP/mylike-apk-files"
+          for abi in armeabi-v7a arm64-v8a x86 x86_64; do
+            grep -Fx "lib/$abi/libreactnative.so" "$RUNNER_TEMP/mylike-apk-files"
+          done
+          mkdir -p "$output"
+          cp "$apk" "$output/MyLike-android-test.apk"
+          cd "$output"
+          sha256sum MyLike-android-test.apk > MyLike-android-test.apk.sha256
+          grep -E '^(sdkVersion|targetSdkVersion|native-code):' <<< "$badging" >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload the test APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: MyLike-android-test-${{ github.run_number }}
+          path: ${{ runner.temp }}/mylike-artifacts/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
