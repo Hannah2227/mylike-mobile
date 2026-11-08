@@ -51,7 +51,7 @@ jobs:
           test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleSupportedPlatforms:0' "$app/Info.plist")" = iPhoneOS
           executable="$(/usr/libexec/PlistBuddy -c 'Print CFBundleExecutable' "$app/Info.plist")"
           minimum_ios="$(/usr/libexec/PlistBuddy -c 'Print MinimumOSVersion' "$app/Info.plist")"
-          xcrun lipo -verify_arch arm64 "$app/$executable"
+          xcrun lipo "$app/$executable" -verify_arch arm64
           mkdir -p "$package/Payload" "$output"
           ditto "$app" "$package/Payload/MyLike.app"
           ditto -c -k --keepParent "$package/Payload" "$output/MyLike-ios-unsigned.ipa"
