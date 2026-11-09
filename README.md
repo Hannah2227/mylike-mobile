@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/readme/logo.svg" width="120" alt="MyLike Logo" />
+
 # MyLike 移动端
 
 **在 iPhone 和 Android 上回看你的喜欢。**
@@ -8,33 +10,50 @@
 
 [![Android](https://img.shields.io/badge/Android-APK-3ddc84?style=flat-square)](https://github.com/Hannah2227/mylike-mobile/releases)
 [![iOS](https://img.shields.io/badge/iOS-IPA-5865f2?style=flat-square)](https://github.com/Hannah2227/mylike-mobile/releases)
-[![Android Build](https://github.com/Hannah2227/mylike-mobile/actions/workflows/android-apk.yml/badge.svg)](https://github.com/Hannah2227/mylike-mobile/actions/workflows/android-apk.yml)
-[![iOS Build](https://github.com/Hannah2227/mylike-mobile/actions/workflows/ios-ipa.yml/badge.svg)](https://github.com/Hannah2227/mylike-mobile/actions/workflows/ios-ipa.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-6bb99b?style=flat-square)](LICENSE)
 
-[下载应用](https://github.com/Hannah2227/mylike-mobile/releases) · [功能特性](#功能特性) · [快速上手](#快速上手) · [反馈问题](https://github.com/Hannah2227/mylike-mobile/issues)
+[下载应用](https://github.com/Hannah2227/mylike-mobile/releases) · [功能特性](#功能特性) · [界面预览](#界面预览) · [快速上手](#快速上手) · [反馈问题](https://github.com/Hannah2227/mylike-mobile/issues)
 
+</div>
+
+## 界面预览
+
+<div align="center">
+<table>
+  <tr>
+    <th>播放页</th>
+    <th>内容库</th>
+  </tr>
+  <tr>
+    <td><img src="assets/readme/playback.svg" width="280" alt="MyLike 播放页示意" /></td>
+    <td><img src="assets/readme/library.svg" width="280" alt="MyLike 内容库示意" /></td>
+  </tr>
+</table>
 </div>
 
 ## 下载
 
 前往 [GitHub Releases](https://github.com/Hannah2227/mylike-mobile/releases) 下载。
 
-注意：移动端不用登录，但是只能播放不能采集，需要通过 MyLike 桌面版导出列表后再导入
+> 注意：移动端不用登录，但是只能播放不能采集，需要通过 MyLike 桌面版导出列表后再导入
 
-- **Android** — 下载 `.apk`，在手机上打开文件并按系统提示安装。
+### Android
 
-- **iPhone** — 下载 `.ipa`。在电脑上用 Sideloadly 签名并安装。
+下载 `.apk`，在手机上打开文件并按系统提示安装。
+
+### iPhone
+
+下载 `.ipa`。在电脑上用 Sideloadly 签名并安装。
+
 1. 用数据线连接设备 在 iPhone 上点「信任此电脑」并输入锁屏密码。
 2. 下载iTunes和Sideloadly，然后打开 Sideloadly，确认顶部识别到你的设备。
 3. 把未签名的 .ipa 拖进 Sideloadly 窗口。Apple ID 填你的，不用填密码到这里。
 4. 点 Start 按提示输入 Apple ID 和密码。
 5. 等待安装完成，看到 ✅ Done。
 6. iPhone 上信任证书：这两步必做，否则打不开。
-          设置 → 通用 → VPN 与设备管理 → 找到你的 Apple ID → 点「信任」
-          设置 → 隐私与安全性 → 开启开发者模式
+   - 设置 → 通用 → VPN 与设备管理 → 找到你的 Apple ID → 点「信任」
+   - 设置 → 隐私与安全性 → 开启开发者模式
 7. 打开 App。免费 Apple 账号签名需要定期续签。
-
 
 ## 功能特性
 
@@ -65,10 +84,10 @@ npm start
 
 ## 免责声明
 
-- MyLike 移动端是独立开发的个人回看工具，与抖音或字节跳动无关联。
-- 请仅导入本人或已获授权的清单，并遵守适用法律法规、平台服务条款和内容权利人的授权范围。视频、图片和音乐的权利归各自权利人所有，转载、传播或商业使用须遵守相应授权。
-- 播放依赖网络、作品状态和平台接口。作品下架、接口调整或访问受限都可能影响播放。请保留原始清单，便于在更换设备或重装应用后重新导入。
-- 软件按现状提供。担保与责任限制见 [MIT License](LICENSE)，并以适用法律为准。
+- **项目关系** — MyLike 移动端是独立开发的个人回看工具，与抖音及字节跳动无关联，也未获其授权或背书。
+- **内容与授权** — 请仅导入本人或已获授权的清单，遵守适用法律法规、平台服务条款和内容权利人的授权范围。视频、图片、音乐及平台标识的权利归各自权利人所有。转载、传播或商业使用须取得相应授权。
+- **数据与隐私** — 内容库和观看进度保存在设备上。分享清单或提交问题前，请检查作品列表及截图中是否包含不愿公开的信息，并保留原始清单以便重装后恢复内容库。
+- **可用性与责任** — 播放依赖网络、作品状态和第三方接口。作品下架、接口调整或访问受限可能影响播放。软件按现状提供，担保及责任限制以适用法律和 [MIT License](LICENSE) 为准。
 
 ## 许可证
 

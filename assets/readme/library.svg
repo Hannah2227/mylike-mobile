@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="780" viewBox="0 0 360 780" role="img" aria-labelledby="title">
+  <title id="title">MyLike 内容库示意</title>
+  <defs>
+    <g id="image-mark" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <rect width="28" height="23" rx="4"/>
+      <circle cx="9" cy="7" r="2.2"/>
+      <path d="m4 19 7-6 4 3 5-6 4 4"/>
+    </g>
+    <g id="video-mark"><path d="M0 0v10l8-5z" fill="currentColor"/></g>
+    <g id="gallery-mark" fill="none" stroke="currentColor" stroke-width="1.4">
+      <rect x="0" y="1" width="8" height="8" rx="1.2"/>
+      <path d="M2 11h7a1 1 0 0 0 1-1V3"/>
+    </g>
+  </defs>
+  <rect x="1" y="1" width="358" height="778" rx="24" fill="#fbfbfd" stroke="#d8d9df" stroke-width="2"/>
+  <g font-family="system-ui, sans-serif">
+    <text x="25" y="36" font-size="13" fill="#24252a" font-weight="600">9:41</text>
+    <path d="M294 34v-3m4 3v-6m4 6v-9m4 9V22" stroke="#24252a" stroke-width="2" stroke-linecap="round"/>
+    <rect x="314" y="24" width="19" height="10" rx="2" fill="none" stroke="#24252a"/>
+    <rect x="316" y="26" width="14" height="6" rx="1" fill="#24252a"/>
+    <text x="17" y="83" font-size="23" fill="#17181d" font-weight="700">MyLike</text>
+    <rect x="162" y="61" width="141" height="33" rx="16.5" fill="#eeeef2"/>
+    <circle cx="177" cy="76" r="5" fill="none" stroke="#747681" stroke-width="1.5"/>
+    <path d="m181 80 4 4m137-12h16m-16 5h16m-16 5h16" stroke="#4b4d57" stroke-width="1.7" stroke-linecap="round"/>
+    <text x="190" y="82" font-size="12" fill="#6b6d77">搜索我的内容</text>
+    <text x="17" y="122" font-size="12" fill="#4b4d57">不限日期</text>
+    <text x="180" y="123" font-size="16" text-anchor="middle" fill="#17181d" font-weight="700">喜欢</text>
+    <text x="343" y="122" font-size="12" text-anchor="end" fill="#4b4d57">随机播放</text>
+    <path d="M14 136h332" stroke="#e7e7ec"/>
+    <path d="M153 136h54" stroke="#17181d" stroke-width="2.5"/>
+    <rect x="17" y="147" width="44" height="27" rx="6" fill="#e6e6eb"/>
+    <rect x="67" y="147" width="44" height="27" rx="6" fill="#f0f0f3"/>
+    <rect x="117" y="147" width="44" height="27" rx="6" fill="#f0f0f3"/>
+    <g font-size="12" text-anchor="middle" fill="#4b4d57">
+      <text x="39" y="165" font-weight="700">全部</text>
+      <text x="89" y="165">视频</text>
+      <text x="139" y="165">图集</text>
+      <text x="343" y="165" text-anchor="end">12 条</text>
+    </g>
+  </g>
+  <g>
+    <rect x="12" y="187" width="110" height="135" fill="#e5d9df"/>
+    <rect x="125" y="187" width="110" height="135" fill="#dbe2ec"/>
+    <rect x="238" y="187" width="110" height="135" fill="#e7e0d8"/>
+    <rect x="12" y="325" width="110" height="135" fill="#dde5e1"/>
+    <rect x="125" y="325" width="110" height="135" fill="#e8dee7"/>
+    <rect x="238" y="325" width="110" height="135" fill="#dce2ef"/>
+    <rect x="12" y="463" width="110" height="135" fill="#e7e0d8"/>
+    <rect x="125" y="463" width="110" height="135" fill="#dbe6e4"/>
+    <rect x="238" y="463" width="110" height="135" fill="#e7dce2"/>
+    <rect x="12" y="601" width="110" height="135" fill="#dce2ef"/>
+    <rect x="125" y="601" width="110" height="135" fill="#e5dce9"/>
+    <rect x="238" y="601" width="110" height="135" fill="#dde5e1"/>
+  </g>
+  <g color="#74717e" opacity=".65">
+    <use href="#image-mark" x="53" y="242"/><use href="#image-mark" x="166" y="242"/><use href="#image-mark" x="279" y="242"/>
+    <use href="#image-mark" x="53" y="380"/><use href="#image-mark" x="166" y="380"/><use href="#image-mark" x="279" y="380"/>
+    <use href="#image-mark" x="53" y="518"/><use href="#image-mark" x="166" y="518"/><use href="#image-mark" x="279" y="518"/>
+    <use href="#image-mark" x="53" y="656"/><use href="#image-mark" x="166" y="656"/><use href="#image-mark" x="279" y="656"/>
+  </g>
+  <g color="#66616f">
+    <use href="#video-mark" x="104" y="196"/><use href="#gallery-mark" x="216" y="196"/><use href="#video-mark" x="330" y="196"/>
+    <use href="#gallery-mark" x="103" y="334"/><use href="#video-mark" x="217" y="334"/><use href="#video-mark" x="330" y="334"/>
+    <use href="#video-mark" x="104" y="472"/><use href="#gallery-mark" x="216" y="472"/><use href="#video-mark" x="330" y="472"/>
+    <use href="#video-mark" x="104" y="610"/><use href="#video-mark" x="217" y="610"/><use href="#gallery-mark" x="329" y="610"/>
+  </g>
+  <rect x="122" y="760" width="116" height="4" rx="2" fill="#54555e"/>
+</svg>
