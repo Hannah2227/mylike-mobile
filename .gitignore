@@ -1,6 +1,7 @@
 node_modules/
 .expo/
 .npm-cache/
+/.signing/
 dist/
 /ios/
 /android/
