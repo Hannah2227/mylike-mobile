@@ -1,5 +1,6 @@
+import { librarySchema, duplicateCount as countImportedDuplicates, mergeLibrary as mergeImportedLibrary } from './library-data';
 import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
-import type { LibraryFilter, LibraryImport, LibraryWork } from './library-format';
+import type { LibraryFilter, LibraryFolder, LibraryImport, LibrarySource, LibraryWork } from './library-format';
 import { publicationBounds, type PublicationPeriod } from './library-period';
 
 export const LIBRARY_PAGE_SIZE = 60;
@@ -7,93 +8,55 @@ const workColumns = 'id,title,author,published_at AS publishedAt,kind,cover_url 
 const workOrder = 'published_at DESC,id DESC';
 const publicationMonth = "strftime('%Y-%m', published_at / 1000.0, 'unixepoch', '+8 hours')";
 
-export type LibraryScope = { search: string; filter: LibraryFilter; period: PublicationPeriod };
+export type LibraryScope = {
+  source: LibrarySource;
+  folderId: string | null;
+  search: string;
+  filter: LibraryFilter;
+  period: PublicationPeriod;
+};
 export type PublicationDates = { years: { year: number; months: number[] }[]; unknown: boolean };
 
 export type ReviewPoint = { kind: 'video' | 'gallery'; value: number };
 export type ReviewQueue = { ids: string[]; mode: 'ordered' | 'shuffle' };
 export type ReviewBookmark = { queue: ReviewQueue; index: number; point: ReviewPoint | null };
 
-let opening: Promise<SQLiteDatabase> | undefined;
+const openings = new Map<string, Promise<SQLiteDatabase>>();
 
-export function openLibrary(): Promise<SQLiteDatabase> {
-  return opening ??= (async () => {
-    const db = await openDatabaseAsync('mylike-mobile.db');
+export function openLibrary(name = 'mylike-mobile.db'): Promise<SQLiteDatabase> {
+  if (!/^mylike-(?:mobile|account-[a-z0-9-]+)\.db$/.test(name)) return Promise.reject(new Error('无效的内容库名称'));
+  const existing = openings.get(name); if (existing) return existing;
+  const opening = (async () => {
+    const db = await openDatabaseAsync(name);
     try {
-      await db.execAsync(`
-        PRAGMA journal_mode = WAL;
-        PRAGMA busy_timeout = 3000;
-        CREATE TABLE IF NOT EXISTS library_works (
-          id TEXT PRIMARY KEY NOT NULL,
-          title TEXT NOT NULL,
-          author TEXT NOT NULL,
-          published_at INTEGER,
-          kind TEXT NOT NULL,
-          cover_url TEXT,
-          source_order INTEGER,
-          source_label TEXT NOT NULL,
-          exported_at INTEGER NOT NULL
-        );
-        CREATE INDEX IF NOT EXISTS library_published ON library_works(published_at DESC, id DESC);
-        CREATE TABLE IF NOT EXISTS review_bookmark (
-          singleton INTEGER PRIMARY KEY CHECK(singleton = 1),
-          queue TEXT NOT NULL,
-          work_id TEXT NOT NULL,
-          point_kind TEXT,
-          point_value REAL
-        );
-      `);
+      await db.execAsync(librarySchema);
       return db;
     } catch (error) {
       await db.closeAsync().catch(() => {});
       throw error;
     }
   })().catch((error) => {
-    opening = undefined;
+    openings.delete(name);
     throw error;
   });
+  openings.set(name, opening); return opening;
 }
 
-export async function duplicateCount(file: LibraryImport): Promise<number> {
-  const db = await openLibrary();
-  let count = 0;
-  for (let offset = 0; offset < file.works.length; offset += 400) {
-    const ids = file.works.slice(offset, offset + 400).map(({ id }) => id);
-    const row = await db.getFirstAsync<{ count: number }>(
-      `SELECT count(*) AS count FROM library_works WHERE id IN (${ids.map(() => '?').join(',')})`,
-      ids,
-    );
-    count += row?.count ?? 0;
+export async function duplicateCount(file: LibraryImport, db?: SQLiteDatabase): Promise<number> {
+  return countImportedDuplicates(file, db ?? await openLibrary());
+}
+
+export async function mergeLibrary(file: LibraryImport, db?: SQLiteDatabase): Promise<void> {
+  return mergeImportedLibrary(file, db ?? await openLibrary());
+}
+
+function libraryFilter({ source, folderId, search, filter, period }: LibraryScope) {
+  const parts = ['EXISTS(SELECT 1 FROM library_memberships WHERE source=? AND work_id=library_works.id)'];
+  const values: (string | number)[] = [source];
+  if (source === 'favorites' && folderId !== null) {
+    parts.push('EXISTS(SELECT 1 FROM library_folder_works WHERE folder_id=? AND work_id=library_works.id)');
+    values.push(folderId);
   }
-  return count;
-}
-
-export async function mergeLibrary(file: LibraryImport): Promise<void> {
-  const db = await openLibrary();
-  await db.withExclusiveTransactionAsync(async (txn) => {
-    for (let offset = 0; offset < file.works.length; offset += 100) {
-      const rows = file.works.slice(offset, offset + 100);
-      const values = rows.flatMap((work) => [
-        work.id, work.title, work.author, work.publishedAt, work.kind, work.coverUrl,
-        work.sourceOrder, file.sourceLabel, file.exportedAt,
-      ]);
-      await txn.runAsync(`
-        INSERT INTO library_works
-          (id,title,author,published_at,kind,cover_url,source_order,source_label,exported_at)
-        VALUES ${rows.map(() => '(?,?,?,?,?,?,?,?,?)').join(',')}
-        ON CONFLICT(id) DO UPDATE SET
-          title=excluded.title, author=excluded.author, published_at=excluded.published_at,
-          kind=excluded.kind, cover_url=coalesce(excluded.cover_url,library_works.cover_url),
-          source_order=coalesce(excluded.source_order,library_works.source_order),
-          source_label=excluded.source_label, exported_at=excluded.exported_at
-        WHERE excluded.exported_at >= library_works.exported_at`, values);
-    }
-  });
-}
-
-function libraryFilter({ search, filter, period }: LibraryScope) {
-  const parts: string[] = [];
-  const values: (string | number)[] = [];
   if (search) {
     parts.push('(instr(lower(title),lower(?))>0 OR instr(lower(author),lower(?))>0)');
     values.push(search, search);
@@ -106,7 +69,12 @@ function libraryFilter({ search, filter, period }: LibraryScope) {
     parts.push('published_at >= ? AND published_at < ?');
     values.push(...publicationBounds(period));
   }
-  return { where: parts.length ? 'WHERE ' + parts.join(' AND ') : '', values };
+  return { where: 'WHERE ' + parts.join(' AND '), values };
+}
+
+export async function readFavoriteFolders() {
+  const db = await openLibrary();
+  return db.getAllAsync<LibraryFolder>('SELECT id,title FROM library_folders ORDER BY title,id');
 }
 
 export async function readLibraryPage(scope: LibraryScope, offset: number) {

@@ -9,17 +9,20 @@ type StopVideo = RefObject<(() => void) | null>;
 const maxClipBytes = 16 * 1024 * 1024;
 let downloadNumber = 0;
 
-export function LiveClip({ candidates, playing, stopVideo, showDiagnostic, repeat, paused, rate }: {
+export function LiveClip({ candidates, playing, stopVideo, showDiagnostic, repeat, paused, rate, poster, onUnavailable, onPhase }: {
   candidates: string[]; playing: boolean; stopVideo: StopVideo; showDiagnostic: boolean; repeat: boolean; paused: boolean; rate: number;
+  poster?: ReactNode; onUnavailable?: () => void;
+  onPhase?: (phase: 'loading' | 'ready' | 'failed') => void;
 }) {
   const [attempt, setAttempt] = useState(0);
   const [error, setError] = useState('');
+  useEffect(() => { if (candidates.length > 0 && attempt >= candidates.length) { onUnavailable?.(); onPhase?.('failed'); } else if (playing && candidates.length) onPhase?.('loading'); }, [attempt, candidates.length, playing, onUnavailable, onPhase]);
   if (!candidates.length) return showDiagnostic ? <Diagnostic>本页未取得实况片段</Diagnostic> : null;
   if (!playing) return showDiagnostic ? <Diagnostic>{`本页 ${candidates.length} 个地址 · 点按试播`}</Diagnostic> : null;
   const uri = candidates[attempt];
   if (!uri) return showDiagnostic ? <Diagnostic>{`试播失败 · ${error} · 长按可重新取链`}</Diagnostic> : null;
   return <PreparedClip key={attempt} uri={uri} address={`地址 ${attempt + 1}/${candidates.length}`} stopVideo={stopVideo}
-    showDiagnostic={showDiagnostic} repeat={repeat} paused={paused} rate={rate}
+    showDiagnostic={showDiagnostic} repeat={repeat} paused={paused} rate={rate} poster={poster} onPhase={onPhase}
     onFailure={(message) => {
       setError(message);
       setAttempt((current) => current === attempt ? current + 1 : current);
@@ -29,9 +32,11 @@ export function LiveClip({ candidates, playing, stopVideo, showDiagnostic, repea
 type ClipProps = {
   uri: string; address: string; stopVideo: StopVideo; onFailure: (message: string) => void; showDiagnostic: boolean;
   repeat: boolean; paused: boolean; rate: number;
+  poster?: ReactNode;
+  onPhase?: (phase: 'loading' | 'ready' | 'failed') => void;
 };
 
-function PreparedClip({ uri, address, stopVideo, onFailure, showDiagnostic, repeat, paused, rate }: ClipProps) {
+function PreparedClip({ uri, address, stopVideo, onFailure, showDiagnostic, repeat, paused, rate, poster, onPhase }: ClipProps) {
   const [localUri, setLocalUri] = useState<string>();
   const [cancelled, setCancelled] = useState(false);
   const failure = useRef(onFailure);
@@ -91,12 +96,12 @@ function PreparedClip({ uri, address, stopVideo, onFailure, showDiagnostic, repe
 
   if (localUri && !cancelled) {
     return <Clip uri={localUri} address={address} stopVideo={stopVideo} onFailure={onFailure}
-      showDiagnostic={showDiagnostic} repeat={repeat} paused={paused} rate={rate} />;
+      showDiagnostic={showDiagnostic} repeat={repeat} paused={paused} rate={rate} poster={poster} onPhase={onPhase} />;
   }
   return showDiagnostic ? <Diagnostic>{cancelled ? '已停止 · 点按重播' : `正在准备实况片段 · ${address}`}</Diagnostic> : null;
 }
 
-function Clip({ uri, address, stopVideo, onFailure, showDiagnostic, repeat, paused, rate }: ClipProps) {
+function Clip({ uri, address, stopVideo, onFailure, showDiagnostic, repeat, paused, rate, poster, onPhase }: ClipProps) {
   const source = useMemo(() => ({ uri, contentType: 'progressive' as const }), [uri]);
   const player = useVideoPlayer(source, (instance) => {
     instance.timeUpdateEventInterval = 0.2;
@@ -115,6 +120,7 @@ function Clip({ uri, address, stopVideo, onFailure, showDiagnostic, repeat, paus
   const [foreground, setForeground] = useState(isForeground);
   const [outcome, setOutcome] = useState<'stopped' | 'ended' | null>(null);
   const stopped = useRef(false);
+  const phaseReported = useRef(false);
   const failure = useRef(onFailure);
   failure.current = onFailure;
 
@@ -126,8 +132,8 @@ function Clip({ uri, address, stopVideo, onFailure, showDiagnostic, repeat, paus
   }, [player]);
   useLayoutEffect(() => {
     stopVideo.current = stop;
-    return () => { if (stopVideo.current === stop) stopVideo.current = null; };
-  }, [stop, stopVideo]);
+    return () => { player.pause(); if (stopVideo.current === stop) stopVideo.current = null; };
+  }, [stop, stopVideo, player]);
   useEffect(() => {
     if (!repeat && !isForeground()) stop();
     const subscription = AppState.addEventListener('change', (state) => {
@@ -168,6 +174,7 @@ function Clip({ uri, address, stopVideo, onFailure, showDiagnostic, repeat, paus
   useEventListener(player, 'timeUpdate', ({ currentTime }) => {
     if (!stopped.current && Number.isFinite(currentTime)) setSeconds(currentTime);
   });
+  useEffect(() => { if (frame && seconds > 0 && !phaseReported.current) { phaseReported.current = true; onPhase?.('ready'); } }, [frame, seconds, onPhase]);
   useEventListener(player, 'playToEnd', () => {
     if (repeat || stopped.current) return;
     stopped.current = true;
@@ -186,6 +193,7 @@ function Clip({ uri, address, stopVideo, onFailure, showDiagnostic, repeat, paus
           setFrame(true);
           if (!paused && foreground && !player.playing) player.play();
         }} />}
+      {!frame && !outcome && poster}
       {showDiagnostic && <Diagnostic>
         {`${phase} · ${address}\n${frame ? '已显示首帧' : '尚无首帧'} · 进度 ${seconds.toFixed(2)} 秒`}
         {metadata ? ` · 音轨 ${metadata.availableAudioTracks.length}` : ''}

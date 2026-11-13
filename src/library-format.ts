@@ -12,6 +12,8 @@ const coverDomains = [
 
 export type WorkKind = 'video' | 'gallery' | 'live-gallery';
 export type LibraryFilter = 'all' | 'video' | 'gallery';
+export type LibrarySource = 'likes' | 'favorites';
+export type LibraryFolder = { id: string; title: string };
 export type LibraryWork = {
   id: string;
   title: string;
@@ -22,10 +24,12 @@ export type LibraryWork = {
   sourceOrder: number | null;
 };
 export type LibraryImport = {
-  version: 1 | 2;
+  version: 2 | 3;
   exportedAt: number;
+  source: LibrarySource;
   sourceLabel: string;
   works: LibraryWork[];
+  folders: (LibraryFolder & { workIds: string[] })[];
   duplicateRows: number;
 };
 
@@ -43,12 +47,6 @@ function utc(value: unknown): number {
   return time;
 }
 
-function legacyPublishedAt(value: unknown): number | null {
-  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0 || value > 8640000000000)
-    throw new Error('发布时间无效。');
-  return value > 0 ? value * 1000 : null;
-}
-
 export function allowedCover(value: unknown): string | null {
   if (typeof value !== 'string' || value.length > 16_384) return null;
   try {
@@ -63,11 +61,8 @@ export function allowedCover(value: unknown): string | null {
   return null;
 }
 
-function kindOf(row: Record<string, unknown>, version: 1 | 2): WorkKind {
-  if (version === 1) {
-    if (typeof row.isLive === 'boolean' && row.mediaType === 'gallery') return row.isLive ? 'live-gallery' : 'gallery';
-    if (row.mediaType === 'video' && row.isLive === false) return 'video';
-  } else if (row.kind === 'video' || row.kind === 'gallery' || row.kind === 'live-gallery') {
+function kindOf(row: Record<string, unknown>): WorkKind {
+  if (row.kind === 'video' || row.kind === 'gallery' || row.kind === 'live-gallery') {
     return row.kind;
   }
   throw new Error('作品类型无效。');
@@ -83,10 +78,13 @@ export function decodeLibrary(text: string): LibraryImport {
   const file = record(value);
   if (file.format !== 'mylike.library') throw new Error('此文件不是 MyLike 清单。');
   const version = file.version;
-  if (version !== 1 && version !== 2) throw new Error('暂不支持这个清单版本。');
+  if (version !== 2 && version !== 3) throw new Error('暂不支持这个清单版本，请使用当前桌面端重新导出。');
   const source = record(file.source);
+  const favorites = version === 3;
+  const expectedKind = favorites ? 'douyin.favorites' : 'douyin.likes';
+  const expectedOrder = favorites ? 'desktop-favorites' : 'desktop-liked';
   if (typeof source.label !== 'string' || source.label.length > 160 ||
-      (version === 2 && (source.kind !== 'douyin.likes' || file.order !== 'desktop-liked')))
+      source.kind !== expectedKind || file.order !== expectedOrder)
     throw new Error('清单来源或顺序字段无效。');
   if (!Array.isArray(file.items) || file.items.length === 0) throw new Error('清单中没有作品。');
   if (file.items.length > MAX_LIBRARY_ITEMS) throw new Error('一次最多导入 10 万条作品。');
@@ -98,10 +96,8 @@ export function decodeLibrary(text: string): LibraryImport {
       if (typeof row.id !== 'string' || !/^\d{1,30}$/.test(row.id) ||
           typeof row.title !== 'string' || typeof row.author !== 'string')
         throw new Error('缺少有效的作品 ID、标题或作者。');
-      const kind = kindOf(row, version);
-      const publishedAt = version === 1
-        ? legacyPublishedAt(row.publishedAt)
-        : row.publishedAt === null ? null : utc(row.publishedAt);
+      const kind = kindOf(row);
+      const publishedAt = row.publishedAt === null ? null : utc(row.publishedAt);
       if (!byId.has(row.id)) {
         byId.set(row.id, {
           id: row.id,
@@ -109,7 +105,7 @@ export function decodeLibrary(text: string): LibraryImport {
           author: row.author,
           publishedAt,
           kind,
-          coverUrl: version === 2 ? allowedCover(row.coverUrl) : null,
+          coverUrl: allowedCover(row.coverUrl),
           sourceOrder: version === 2 ? index : null,
         });
       }
@@ -117,11 +113,27 @@ export function decodeLibrary(text: string): LibraryImport {
       throw new Error(`第 ${index + 1} 条作品无效：${error instanceof Error ? error.message : '字段有误。'}`);
     }
   }
+  const folders: LibraryImport['folders'] = [];
+  if (favorites) {
+    if (!Array.isArray(file.folders)) throw new Error('收藏夹列表无效。');
+    const ids = new Set<string>();
+    for (const raw of file.folders) {
+      const { id, title, workIds } = record(raw);
+      if (typeof id !== 'string' || !/^[0-9a-f]{64}$/.test(id) || ids.has(id) ||
+          typeof title !== 'string' || !Array.isArray(workIds) ||
+          workIds.some((workId) => typeof workId !== 'string' || !byId.has(workId)))
+        throw new Error('收藏夹或其作品关系无效。');
+      ids.add(id);
+      folders.push({ id, title, workIds: [...new Set<string>(workIds)] });
+    }
+  }
   return {
     version,
     exportedAt,
+    source: favorites ? 'favorites' : 'likes',
     sourceLabel: source.label,
     works: [...byId.values()],
+    folders,
     duplicateRows: file.items.length - byId.size,
   };
 }

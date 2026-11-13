@@ -18,8 +18,9 @@ function Choice({ label, selected, onPress, year }: {
   );
 }
 
-export function PublicationSheet({ scope, onApply, onClose }: {
+export function PublicationSheet({ scope, onApply, onClose, loadDates }: {
   scope: LibraryScope; onApply: (period: PublicationPeriod) => void; onClose: () => void;
+  loadDates?: () => Promise<PublicationDates>;
 }) {
   const [dates, setDates] = useState<PublicationDates | null>(null);
   const [year, setYear] = useState<number>();
@@ -32,13 +33,13 @@ export function PublicationSheet({ scope, onApply, onClose }: {
   useEffect(() => {
     let live = true;
     setFailed(false);
-    void readPublicationDates(scope).then((available) => {
+    void (loadDates ? loadDates() : readPublicationDates(scope)).then((available) => {
       if (!live) return;
       setDates(available);
       setYear(available.years.find((entry) => entry.year === currentYear)?.year ?? available.years[0]?.year);
     }).catch(() => { if (live) setFailed(true); });
     return () => { live = false; };
-  }, [scope, currentYear, attempt]);
+  }, [scope, currentYear, attempt, loadDates]);
 
   const yearIndex = dates?.years.findIndex((entry) => entry.year === year) ?? -1;
   const months = yearIndex >= 0 ? dates?.years[yearIndex].months : undefined;

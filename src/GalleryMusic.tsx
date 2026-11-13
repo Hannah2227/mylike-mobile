@@ -44,6 +44,7 @@ function Track({ uri, enabled, stopMusic, onFailure }: MusicProps & { uri: strin
     stopMusic.current = stop;
     return () => {
       wanted.current = false;
+      player.pause();
       if (stopMusic.current === stop) stopMusic.current = null;
     };
   }, [player, stopMusic]);

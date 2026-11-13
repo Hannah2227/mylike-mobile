@@ -10,14 +10,19 @@ export const mediaHeaders = {
 };
 
 type RecordValue = Record<string, unknown>;
-type VideoResult = {
+type Presentation = {
+  author?: string; authorAvatar?: string; authorSecUid?: string;
+  statistics?: { likes?: number; comments?: number; favorites?: number; shares?: number };
+};
+type VideoResult = Presentation & {
   id: string;
   title: string;
   candidates: string[];
   author?: string;
+  size?: { width: number; height: number };
 };
 
-type GalleryResult = {
+type GalleryResult = Presentation & {
   id: string;
   title: string;
   images: { candidates: string[]; liveCandidates: string[] }[];
@@ -61,6 +66,10 @@ function mediaUrls(...lists: unknown[]): string[] {
 function displayText(value: unknown) {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 }
+function videoSize(value: RecordValue | undefined) {
+  const width = value?.width; const height = value?.height;
+  return typeof width === 'number' && typeof height === 'number' && Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0 && width <= 16_384 && height <= 16_384 ? { width, height } : undefined;
+}
 
 export function parseMediaDetail(body: string, id: string): MediaResult {
   let payload: RecordValue | undefined;
@@ -86,7 +95,15 @@ export function parseMediaDetail(body: string, id: string): MediaResult {
   if (detail.aweme_id !== id) throw new DouyinError('详情返回了不同的作品 ID，已停止播放。');
   const title = typeof detail.desc === 'string' && detail.desc.trim() ? detail.desc.trim() : '抖音视频';
   const author = displayText(object(detail.author)?.nickname);
-  const common = { id, title, ...(author && { author }) };
+  const authorInfo = object(detail.author);
+  const authorAvatar = mediaUrls(object(authorInfo?.avatar_thumb)?.url_list, object(authorInfo?.avatar_medium)?.url_list, object(authorInfo?.avatar_168x168)?.url_list)[0];
+  const authorSecUid = typeof authorInfo?.sec_uid === 'string' && /^MS4wLjAB[A-Za-z0-9_-]{8,248}$/.test(authorInfo.sec_uid) ? authorInfo.sec_uid : undefined;
+  const statistics: NonNullable<Presentation['statistics']> = {};
+  const counts = object(detail.statistics);
+  for (const [key, field] of [['likes','digg_count'],['comments','comment_count'],['favorites','collect_count'],['shares','share_count']] as const) {
+    const value = counts?.[field]; if (typeof value === 'number' && Number.isSafeInteger(value) && value >= 0) statistics[key] = value;
+  }
+  const common = { id, title, ...(author && { author }), ...(authorAvatar && { authorAvatar }), ...(authorSecUid && { authorSecUid }), ...(Object.keys(statistics).length && { statistics }) };
   if (Array.isArray(detail.images) && detail.images.length > 0) {
     const images = detail.images.map((value) => {
       const image = object(value);
@@ -115,7 +132,8 @@ export function parseMediaDetail(body: string, id: string): MediaResult {
   const video = object(detail.video);
   const candidates = mediaUrls(object(video?.play_addr_h264)?.url_list, object(video?.play_addr)?.url_list);
   if (!candidates.length) throw new DouyinError('已取到详情，但没有可用的 HTTPS 视频地址。');
-  return { ...common, candidates };
+  const size = videoSize(video) ?? videoSize(object(video?.play_addr_h264)) ?? videoSize(object(video?.play_addr));
+  return { ...common, candidates, ...(size && { size }) };
 }
 
 export async function resolveMedia(id: string, signal?: AbortSignal): Promise<MediaResult> {

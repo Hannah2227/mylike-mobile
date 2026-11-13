@@ -6,7 +6,7 @@
 
 **在 iPhone 和 Android 上回看你的喜欢。**
 
-导入 MyLike 桌面端的喜欢清单，随时查找、播放和续看。
+导入 MyLike 桌面端的喜欢与收藏清单，随时查找、播放和续看。
 
 [![Android](https://img.shields.io/badge/Android-APK-3ddc84?style=flat-square)](https://github.com/Hannah2227/mylike-mobile/releases)
 [![iOS](https://img.shields.io/badge/iOS-IPA-5865f2?style=flat-square)](https://github.com/Hannah2227/mylike-mobile/releases)
@@ -57,17 +57,21 @@
 
 ## 功能特性
 
-- **导入喜欢** — 支持导入 MyLike 桌面端导出的 JSON，预览新增与重复条数，按作品 ID 合并。
+- **清单导入** — 支持桌面端导出的喜欢和收藏 JSON，预览新增与重复条数，按作品 ID 合并，保留收藏夹关系。
+- **本机管理** — 喜欢、收藏与收藏夹在手机上独立管理，支持多个本机账号空间，不修改抖音账号状态。
 - **随手找到** — 三列封面浏览，支持按标题或作者搜索，以及按作品类型和发布时间筛选。
 - **滑动回看** — 上下滑切换作品，图集内左右滑翻页。支持视频、图集配乐和有可用片段的实况图集。
 - **播放队列** — 点开封面顺序播放，或把当前筛选结果随机排列。可切换自动连播、倍速和清屏。
-- **断点续播** — 记录上次作品、视频时间或图集页码。回到内容库后，向右滑可继续上次回看。
+- **播放手势** — 点按暂停，双击喜欢；两侧长按临时清屏 2 倍速，下拉到底部可锁定或解除倍速。支持双指缩放，松手复原。
+- **断点续播** — 记录上次作品、视频时间或图集页码，在「我 → 更多」继续观看或查看历史。
 
 ## 快速上手
 
-1. **准备清单** — 在 MyLike 桌面版导出 JSON。
-2. **导入手机** — 把 JSON 保存到手机的「文件」或「下载」。打开 MyLike，在内容库选「导入清单」。
-3. **开始回看** — 点开一张封面，或点「随机播放」。横拖视频底部可跳转，长按画面中间可打开播放选项，左滑右滑可切换播放页和内容页。
+1. **准备清单** — 在 MyLike 桌面版导出喜欢或收藏 JSON。
+2. **导入手机** — 把 JSON 保存到手机的「文件」或「下载」。在「我」中选好本机账号，再点底部「＋」导入。
+3. **开始回看** — 首页浏览已导入作品，或在「我」中按全部、喜欢、收藏夹查找，点封面回看，也可随机播放。拖动视频底部可跳转，长按画面中间可打开播放选项。
+
+从 v1.0.0 升级后，原作品仍保留在「我 → 全部」，旧观看进度不迁移；重新导入当前桌面清单可补齐喜欢与收藏来源。覆盖安装需沿用相同应用标识与签名；卸载会移除设备上的本地数据。
 
 播放时需要联网，手机会按作品 ID 实时获取媒体地址，无需登录抖音。遇到作品失效或接口受限时，可以重试或划到下一条。
 
@@ -80,7 +84,7 @@ npm ci
 npm start
 ```
 
-使用支持 SDK 58 的 Expo Go 调试。`npm run typecheck` 检查类型，`npm test` 运行测试。维护者可以在 Actions 手动运行 **Build Android test APK** 和 **Build iPhone test IPA**，在构建结果的 Artifacts 区获取独立测试包。 [Expo Go](https://expo.dev/go) · [构建工作流](https://github.com/Hannah2227/mylike-mobile/actions)
+使用支持 SDK 58 的 Expo Go 调试。普通启动和 Actions 共用首页／导入／我的入口；`npm run start:m1` 为 8083 端口的启动别名。`npm run typecheck` 检查类型，`npm test` 运行测试。维护者可在 Actions 手动运行 **Build Android test APK** 和 **Build iPhone test IPA**，在 Artifacts 获取独立测试包。iOS 产物为未签名 IPA，安装前需自行签名。 [Expo Go](https://expo.dev/go) · [构建工作流](https://github.com/Hannah2227/mylike-mobile/actions)
 
 ## 免责声明
 

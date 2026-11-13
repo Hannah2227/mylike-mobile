@@ -1,4 +1,4 @@
-import { deepEqual, equal, rejects, throws } from 'node:assert/strict';
+import { deepEqual, equal, ok, rejects, throws } from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { parseMediaDetail, resolveMedia } from '../src/douyin.ts';
@@ -7,6 +7,16 @@ const SAMPLE_ID = '7637322941528689935';
 const mediaUrl = 'https://media.example.test/play?signature=a%2Fb';
 const detailBody = `{"status_code":0,"aweme_detail":{"aweme_id":${SAMPLE_ID},"desc":"测试",` +
   `"video":{"play_addr":{"url_list":["http://media.example.test/insecure","${mediaUrl}","${mediaUrl}"]}}}}`;
+
+test('keeps real presentation metadata without inventing missing public counts', () => {
+  const value = parseMediaDetail(JSON.stringify({ status_code: 0, aweme_detail: { aweme_id: SAMPLE_ID, video: { play_addr: { url_list: [mediaUrl] } },
+    author: { nickname: '作者', sec_uid: 'MS4wLjABAAAA' + 'a'.repeat(60), avatar_thumb: { url_list: ['http://unsafe.test/a', 'https://images.example.test/avatar'] } },
+    music: { title: '配乐' }, statistics: { digg_count: 0, comment_count: 12, collect_count: -1, share_count: 'unknown' },
+  } }), SAMPLE_ID);
+  equal(value.authorAvatar, 'https://images.example.test/avatar');
+  equal(value.authorSecUid, 'MS4wLjABAAAA' + 'a'.repeat(60));
+  deepEqual(value.statistics, { likes: 0, comments: 12 });
+});
 
 test('rejects an invalid work ID before making a request', async (context) => {
   const request = context.mock.method(globalThis, 'fetch', async () => new Response(detailBody));
@@ -27,6 +37,11 @@ test('reads the public author name for the playback caption', () => {
     author: { nickname: ' 作者 ' },
   } });
   equal(parseMediaDetail(body, SAMPLE_ID).author, '作者');
+});
+test('keeps display dimensions for proportional fitting and omits invalid dimensions', () => {
+  const body = (width: unknown, height: unknown) => JSON.stringify({ status_code: 0, aweme_detail: { aweme_id: SAMPLE_ID, video: { width, height, play_addr: { url_list: [mediaUrl] } } } });
+  const portrait = parseMediaDetail(body(1080, 1920), SAMPLE_ID); ok('candidates' in portrait); deepEqual(portrait.size, { width: 1080, height: 1920 });
+  const unknown = parseMediaDetail(body('1080', -1920), SAMPLE_ID); equal('size' in unknown, false);
 });
 
 test('keeps gallery pages in order and separates pictures, H.264 clips and album music', () => {
@@ -64,6 +79,7 @@ test('an HTTP 200 with no work data is not a successful lookup', async (context)
   context.mock.method(globalThis, 'fetch', async () => new Response('{"status_code":0}'));
   await rejects(resolveMedia(SAMPLE_ID), /没有作品数据/);
 });
+
 
 test('the guest detail request does not send credentials', async (context) => {
   const request = context.mock.method(globalThis, 'fetch', async () => new Response(detailBody));

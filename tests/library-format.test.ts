@@ -24,6 +24,7 @@ test('v2 keeps exact work IDs, order, and safe cover addresses while deduplicati
     coverUrl: 'https://douyinpic.com.example.test/cover.jpg',
   };
   const file = decodeLibrary(JSON.stringify({ ...v2, items: [first, second, first] }));
+  equal(file.source, 'likes');
   equal(file.duplicateRows, 1);
   deepEqual(file.works.map(({ id, kind, sourceOrder, coverUrl }) => [id, kind, sourceOrder, coverUrl]), [
     [first.id, 'video', 0, first.coverUrl],
@@ -31,16 +32,32 @@ test('v2 keeps exact work IDs, order, and safe cover addresses while deduplicati
   ]);
 });
 
-test('v1 works convert the published timestamp and media type without inventing an order', () => {
-  const file = decodeLibrary(JSON.stringify({
+test('v3 imports favorites and retains multiple folder memberships for one work', () => {
+  const second = { ...first, id: '7637322941528689936' };
+  const v3 = {
+    ...v2, version: 3, source: { kind: 'douyin.favorites', label: '我的收藏' }, order: 'desktop-favorites',
+    items: [first, second],
+    folders: [
+      { id: 'a'.repeat(64), title: '旅行', workIds: [first.id, first.id, second.id] },
+      { id: 'b'.repeat(64), title: '摄影', workIds: [first.id] },
+      { id: 'c'.repeat(64), title: '空收藏夹', workIds: [] },
+    ],
+  };
+  const file = decodeLibrary(JSON.stringify(v3));
+  equal(file.source, 'favorites');
+  equal(file.works[0].coverUrl, first.coverUrl);
+  deepEqual(file.folders.map(({ workIds }) => workIds), [[first.id, second.id], [first.id], []]);
+  throws(() => decodeLibrary(JSON.stringify({ ...v3, version: 2 })), /清单来源/);
+  throws(() => decodeLibrary(JSON.stringify({ ...v3, folders: [{ ...v3.folders[0], workIds: ['9'] }] })),
+    /收藏夹或其作品关系无效/);
+});
+
+test('obsolete v1 files require a fresh desktop export', () => {
+  throws(() => decodeLibrary(JSON.stringify({
     ...v2, version: 1, source: { label: '旧版' },
     items: [{ id: first.id, title: first.title, author: first.author, publishedAt: 1700000000,
       mediaType: 'gallery', isLive: true, collectedAt: 1700000001234 }],
-  }));
-  deepEqual(file.works[0], {
-    id: first.id, title: first.title, author: first.author, publishedAt: 1700000000000,
-    kind: 'live-gallery', sourceOrder: null, coverUrl: null,
-  });
+  })), /当前桌面端重新导出/);
 });
 
 test('unsupported versions and bad rows fail the entire preview', () => {
