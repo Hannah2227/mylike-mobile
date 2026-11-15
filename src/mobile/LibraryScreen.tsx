@@ -16,16 +16,17 @@ import Animated, { useAnimatedScrollHandler, type AnimatedRef, type SharedValue 
 import { MyProfile } from './MyProfile';
 import { headerCollapse } from './motion';
 import type { Folder } from './local-data';
+import { meColors as c } from './me-theme';
 
 export type OpenQueue = (session: Session, scope: Scope, title: string) => void;
 export type LibraryPagerState = { page: number; enabled: boolean; list: AnimatedRef<FlatList<Work>>; offsets: SharedValue<number[]>; collapses: SharedValue<number[]>; leader: SharedValue<number>; headerY: SharedValue<number>; header: number; viewport: number; onDrag: () => void; onMetrics: (height: number) => void; onHorizontalLock: (locked: boolean) => void };
 function Card({ work, width, last, onPress }: { work: Work; width: number; last: boolean; onPress: () => void }) {
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [work.coverUrl]);
-  return <Pressable accessibilityLabel={`${work.title}，${work.author}`} onPress={onPress} style={{ width, height: width / 0.76, marginRight: last ? 0 : 1, marginBottom: 1, backgroundColor: '#292b32' }}>
-    {work.coverUrl && !failed ? <Image source={{ uri: work.coverUrl, headers: mediaHeaders }} onError={() => setFailed(true)} resizeMode="cover" style={StyleSheet.absoluteFill} /> :
-      <View style={styles.placeholder}><Text numberOfLines={3} style={ui.muted}>{work.title || '未命名作品'}</Text></View>}
-    <Ionicons name={work.kind === 'video' ? 'play' : work.kind === 'live-gallery' ? 'radio-outline' : 'albums'} color="#fff" size={18} style={styles.type} />
+  return <Pressable accessibilityRole="button" accessibilityLabel={`${work.title}，${work.author}`} onPress={onPress} style={({ pressed }) => [{ width, height: width / 0.76, marginRight: last ? 0 : 1, marginBottom: 1, backgroundColor: c.surface }, pressed && styles.pressed]}>
+    {work.coverUrl && !failed ? <Image source={{ uri: work.coverUrl, headers: mediaHeaders }} onError={() => setFailed(true)} fadeDuration={0} resizeMode="cover" style={StyleSheet.absoluteFill} /> :
+      <View style={styles.placeholder}><Ionicons name="image-outline" size={24} color="#5e6375" /><Text numberOfLines={3} style={styles.placeholderTitle}>{work.title || '未命名作品'}</Text></View>}
+    <View pointerEvents="none" style={styles.type}><Ionicons name={work.kind === 'video' ? 'play' : work.kind === 'live-gallery' ? 'radio-outline' : 'albums-outline'} color="#fff" size={14} /></View>
   </Pressable>;
 }
 export function LibraryScreen({ visible = true, onOpen, onImport, searchOnly, onBack, author, authorSecUid, onSearch, onMore, collection, pager }: {
@@ -96,11 +97,23 @@ export function LibraryScreen({ visible = true, onOpen, onImport, searchOnly, on
     {!author && !pager && <View style={styles.tabs}>{([['all','全部'],['likes','喜欢'],['favorites','收藏']] as const).map(([key, label]) => <Pressable key={key} onPress={() => { setSource(key); setFolder(null); }} style={[styles.tab, source === key && styles.selectedTab]}><Text style={[styles.tabText, source === key && { color: '#fff', fontWeight: '700' }]}>{label}</Text></Pressable>)}</View>}
     {source === 'favorites' && <View style={styles.folderRow}><ScrollView horizontal nestedScrollEnabled directionalLockEnabled showsHorizontalScrollIndicator={false} contentContainerStyle={styles.folderTabs}
       onTouchStart={() => pager?.onHorizontalLock(true)} onTouchEnd={() => pager?.onHorizontalLock(false)} onTouchCancel={() => pager?.onHorizontalLock(false)} onScrollBeginDrag={() => pager?.onHorizontalLock(true)} onScrollEndDrag={() => pager?.onHorizontalLock(false)}>
-      {[{ id: null, title: '全部收藏夹', count: totals.favorites }, ...folderItems, { id: 'unfiled', title: '未分组', count: null }].map(item => <Pressable key={item.id ?? 'all'} accessibilityRole="tab" accessibilityState={{ selected: (folder?.id ?? null) === item.id }} onPress={() => setFolder(item.id ? { id: item.id, title: item.title } : null)} style={[styles.folderTab, (folder?.id ?? null) === item.id && styles.folderSelected]}><Text numberOfLines={1} style={[(folder?.id ?? null) === item.id ? styles.folderSelectedText : styles.folderText]}>{item.title}{item.count === null ? '' : ` ${item.count}`}</Text></Pressable>)}
-    </ScrollView><IconButton name="folder-open-outline" label="管理收藏夹" size={21} onPress={() => setFolderOpen(true)} /></View>}
-    <View style={styles.filters}>{([['all','全部'],['video','视频'],['gallery','图集']] as const).map(([key, label]) => <Button key={key} title={label} selected={filter === key} onPress={() => setFilter(key)} />)}
-      <Button title={publicationLabel(period)} onPress={() => setPeriodOpen(true)} /></View>
-    <View style={styles.queueRow}><Text style={ui.muted}>{loading ? '正在读取…' : `${total} 条作品`}</Text><View style={ui.row}><Button title="顺序播放" disabled={starting || loading || !total} onPress={() => void open('ordered')} /><Button title={starting ? '准备中…' : '随机播放'} disabled={starting || loading || !total} onPress={() => void open('shuffle')} /></View></View>
+      {[{ id: null, title: '全部收藏夹', count: totals.favorites }, ...folderItems, { id: 'unfiled', title: '未分组', count: null }].map(item => {
+        const selected = (folder?.id ?? null) === item.id;
+        return <Pressable key={item.id ?? 'all'} accessibilityRole="tab" accessibilityState={{ selected }} hitSlop={{ top: 5, bottom: 5 }} onPress={() => setFolder(item.id ? { id: item.id, title: item.title } : null)} style={({ pressed }) => [styles.folderTab, selected && styles.folderSelected, pressed && styles.pressed]}>
+          <Ionicons name={item.id === null ? 'grid-outline' : item.id === 'unfiled' ? 'file-tray-outline' : 'folder-outline'} size={14} color={selected ? c.accentText : c.muted} />
+          <Text numberOfLines={1} style={[styles.folderText, selected && styles.folderSelectedText]}>{item.title}</Text>
+          {item.count !== null && <Text style={[styles.folderCount, selected && styles.folderSelectedText]}>{item.count.toLocaleString()}</Text>}
+        </Pressable>;
+      })}
+    </ScrollView><IconButton name="folder-open-outline" label="管理收藏夹" size={20} color={c.secondary} onPress={() => setFolderOpen(true)} /></View>}
+    <View style={styles.filters}><View style={styles.segmented}>{([['all','全部'],['video','视频'],['gallery','图集']] as const).map(([key, label]) => <Pressable key={key} accessibilityRole="tab" accessibilityState={{ selected: filter === key }} hitSlop={{ top: 3, bottom: 3 }} onPress={() => setFilter(key)} style={({ pressed }) => [styles.filter, filter === key && styles.filterSelected, pressed && styles.pressed]}><Text style={[styles.filterText, filter === key && styles.filterSelectedText]}>{label}</Text></Pressable>)}</View>
+      <Pressable accessibilityRole="button" accessibilityLabel={`按年月筛选，当前${publicationLabel(period)}`} accessibilityState={{ selected: Boolean(period) }} onPress={() => setPeriodOpen(true)} style={({ pressed }) => [styles.date, Boolean(period) && styles.dateSelected, pressed && styles.pressed]}>
+        <Ionicons name="calendar-outline" size={15} color={period ? c.accentText : c.muted} /><Text numberOfLines={1} style={[styles.dateText, Boolean(period) && styles.dateTextSelected]}>{publicationLabel(period)}</Text>
+      </Pressable></View>
+    <View style={styles.queueRow}><Text numberOfLines={1} style={styles.total}>{loading ? '正在读取…' : `${total.toLocaleString()} 条作品`}</Text><View style={styles.playActions}>
+      <Pressable accessibilityRole="button" accessibilityLabel="顺序播放" accessibilityState={{ disabled: starting || loading || !total }} disabled={starting || loading || !total} onPress={() => void open('ordered')} style={({ pressed }) => [styles.playAction, (starting || loading || !total) && styles.disabled, pressed && styles.pressed]}><Ionicons name="play-outline" size={14} color={c.secondary} /><Text style={styles.playText}>顺序播放</Text></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel="随机播放" accessibilityState={{ disabled: starting || loading || !total }} disabled={starting || loading || !total} onPress={() => void open('shuffle')} style={({ pressed }) => [styles.playAction, styles.primaryPlay, (starting || loading || !total) && styles.disabled, pressed && styles.pressed]}><Ionicons name="shuffle" size={16} color="#fff" /><Text style={[styles.playText, styles.primaryPlayText]}>{starting ? '准备中…' : '随机播放'}</Text></Pressable>
+    </View></View>
     {error && <Pressable onPress={() => { setRefresh(v => v + 1); }}><Text style={ui.error}>{error}</Text></Pressable>}
   </View>;
   return <View style={ui.screen} onLayout={event => { if (event.nativeEvent.layout.width > 0) setMeasuredWidth(event.nativeEvent.layout.width); }}>
@@ -108,11 +121,27 @@ export function LibraryScreen({ visible = true, onOpen, onImport, searchOnly, on
     <Animated.FlatList ref={list} data={rows} numColumns={3} keyExtractor={item => item.id} ListHeaderComponent={head} onEndReached={() => void loadMore()} onEndReachedThreshold={1}
       initialNumToRender={15} maxToRenderPerBatch={9} windowSize={5} keyboardShouldPersistTaps="handled" onScroll={pager ? scroll : undefined} scrollEnabled={pager ? pager.enabled : true} scrollEventThrottle={16} onScrollBeginDrag={pager?.onDrag} onContentSizeChange={(_, height) => pager?.onMetrics(height)} bounces={!pager} nestedScrollEnabled contentContainerStyle={pager ? { minHeight: pager.viewport + pager.header } : undefined}
       renderItem={({ item, index }) => <Card work={item} width={cardWidth} last={index % 3 === 2} onPress={() => void open('ordered', item.id)} />}
-      ListEmptyComponent={loading ? <ActivityIndicator color="#fff" style={{ padding: 30 }} /> : <View style={ui.empty}><Text style={ui.muted}>{query || filter !== 'all' || period || folder ? '没有匹配的作品' : '尚无内容，先导入一份清单'}</Text>{onImport && <Button title="导入清单" selected onPress={onImport} />}</View>} />
+      ListEmptyComponent={loading ? <ActivityIndicator color="#fff" style={{ padding: 30 }} /> : <View style={styles.empty}><View style={styles.emptyIcon}><Ionicons name={query || filter !== 'all' || period || folder ? 'search-outline' : 'albums-outline'} size={30} color={c.muted} /></View><Text style={styles.emptyTitle}>{query || filter !== 'all' || period || folder ? '没有匹配的作品' : '尚无内容，先导入一份清单'}</Text>{onImport && <Button title="导入清单" selected style={styles.importButton} onPress={onImport} />}</View>} />
     {periodOpen && <PublicationSheet scope={dateScope} loadDates={loadDates} onClose={() => setPeriodOpen(false)} onApply={value => { setPeriod(value); setPeriodOpen(false); }} />}
     {folderOpen && <FolderSheet manage onClose={() => setFolderOpen(false)} />}
 
 
   </View>;
 }
-const styles = StyleSheet.create({ topbar: { height: 48, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8 }, folderRow: { flexDirection: 'row', alignItems: 'center', paddingLeft: 12 }, folderTabs: { gap: 8, paddingVertical: 10 }, folderTab: { minHeight: 34, maxWidth: 210, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 5, backgroundColor: '#242731' }, folderSelected: { backgroundColor: '#3a3d48' }, folderText: { color: '#a5a6ad', fontSize: 13 }, folderSelectedText: { color: '#fff', fontSize: 13, fontWeight: '600' }, searchRow: { marginHorizontal: 15, borderRadius: 6, backgroundColor: '#282b37', flexDirection: 'row', alignItems: 'center', paddingLeft: 10 }, search: { flex: 1, height: 42, color: '#fff', fontSize: 14, marginLeft: 8 }, tabs: { flexDirection: 'row', height: 50, marginTop: 6 }, tab: { flex: 1, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' }, selectedTab: { borderBottomColor: '#fff' }, tabText: { color: '#aaa', fontSize: 16 }, filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, padding: 12 }, queueRow: { flexDirection: 'row', paddingHorizontal: 13, paddingBottom: 12, alignItems: 'center', justifyContent: 'space-between' }, placeholder: { flex: 1, padding: 12, alignItems: 'center', justifyContent: 'center' }, type: { position: 'absolute', top: 9, right: 7 }, overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: '#0008' }, sheet: { maxHeight: '70%', padding: 20, gap: 14, borderTopLeftRadius: 18, borderTopRightRadius: 18, backgroundColor: '#262630' } });
+const styles = StyleSheet.create({
+  topbar: { height: 48, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8 },
+  folderRow: { flexDirection: 'row', alignItems: 'center', paddingLeft: 16, paddingRight: 8, paddingTop: 12 }, folderTabs: { gap: 8, paddingVertical: 5 },
+  folderTab: { minHeight: 34, maxWidth: 220, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 17, backgroundColor: c.soft, borderWidth: 1, borderColor: c.line, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  folderSelected: { backgroundColor: c.accentSoft, borderColor: '#fc2f5633' }, folderText: { flexShrink: 1, color: c.secondary, fontSize: 12 }, folderCount: { color: c.muted, fontSize: 11, fontVariant: ['tabular-nums'] }, folderSelectedText: { color: c.accentText, fontWeight: '600' },
+  searchRow: { marginHorizontal: 16, borderRadius: 14, borderWidth: 1, borderColor: c.line, backgroundColor: c.surface, flexDirection: 'row', alignItems: 'center', paddingLeft: 12 }, search: { flex: 1, height: 44, color: c.text, fontSize: 14, marginLeft: 8 },
+  tabs: { flexDirection: 'row', height: 50, marginTop: 6 }, tab: { flex: 1, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' }, selectedTab: { borderBottomColor: c.accent }, tabText: { color: c.muted, fontSize: 16 },
+  filters: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
+  segmented: { flexDirection: 'row', padding: 3, borderRadius: 12, backgroundColor: c.surface }, filter: { minHeight: 38, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 9, alignItems: 'center', justifyContent: 'center' }, filterSelected: { backgroundColor: '#3a3e4c' },
+  filterText: { color: c.muted, fontSize: 13, lineHeight: 18 }, filterSelectedText: { color: c.text, fontWeight: '600' },
+  date: { flexShrink: 1, minWidth: 0, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: c.line, backgroundColor: c.soft }, dateSelected: { backgroundColor: c.accentSoft, borderColor: '#fc2f5633' }, dateText: { flexShrink: 1, color: c.secondary, fontSize: 12, lineHeight: 18, fontVariant: ['tabular-nums'] }, dateTextSelected: { color: c.accentText },
+  queueRow: { flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 12, alignItems: 'center', gap: 8 }, total: { flex: 1, minWidth: 0, color: c.muted, fontSize: 12, fontVariant: ['tabular-nums'] }, playActions: { flexDirection: 'row', gap: 4 },
+  playAction: { minHeight: 44, paddingHorizontal: 10, paddingVertical: 9, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, borderRadius: 22 }, primaryPlay: { backgroundColor: c.accent, paddingHorizontal: 12 }, playText: { color: c.secondary, fontSize: 12, lineHeight: 18 }, primaryPlayText: { color: '#fff', fontWeight: '600' },
+  pressed: { opacity: 0.65 }, disabled: { opacity: 0.35 }, placeholder: { flex: 1, padding: 12, gap: 10, alignItems: 'center', justifyContent: 'center' }, placeholderTitle: { color: c.muted, textAlign: 'center', fontSize: 11, lineHeight: 17 },
+  type: { position: 'absolute', top: 7, right: 7, minWidth: 25, height: 25, borderRadius: 8, backgroundColor: '#00000080', alignItems: 'center', justifyContent: 'center' },
+  empty: { paddingHorizontal: 28, paddingVertical: 42, alignItems: 'center', gap: 18 }, emptyIcon: { width: 72, height: 72, borderRadius: 24, backgroundColor: c.soft, alignItems: 'center', justifyContent: 'center' }, emptyTitle: { color: c.secondary, fontSize: 14, lineHeight: 22, textAlign: 'center' }, importButton: { minHeight: 44, borderRadius: 22, paddingHorizontal: 24 },
+});

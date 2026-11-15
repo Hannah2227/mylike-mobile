@@ -6,15 +6,13 @@ export function usePrefetch(ids: string[] | undefined, index: number, enabled: b
   useEffect(() => {
     if (!ids || !enabled) return;
     const abort = new AbortController();
-    const timer = setTimeout(() => {
-      void (async () => {
-        // One background lookup at a time; native players join these requests.
-        for (const id of prefetchIds(ids, index)) {
-          if (abort.signal.aborted) break;
-          try { await loadMedia(id, abort.signal); } catch { /* Visible slots own retry and error presentation. */ }
-        }
-      })();
-    }, 120);
-    return () => { clearTimeout(timer); abort.abort(); };
+    void (async () => {
+      // One background lookup at a time; native players join these requests.
+      for (const id of prefetchIds(ids, index)) {
+        if (abort.signal.aborted) break;
+        try { await loadMedia(id, abort.signal); } catch { /* Visible slots own retry and error presentation. */ }
+      }
+    })();
+    return () => abort.abort();
   }, [ids, index, enabled]);
 }

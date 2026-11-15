@@ -1,7 +1,7 @@
-import { deepEqual, equal, ok, rejects } from 'node:assert/strict';
+import { deepEqual, equal, rejects } from 'node:assert/strict';
 import { test } from 'node:test';
 import { createRequestCache } from '../src/mobile/request-cache.ts';
-import { headerCollapse, libraryOffset, prefetchIds, snapDuration } from '../src/mobile/motion.ts';
+import { headerCollapse, libraryOffset, prefetchIds } from '../src/mobile/motion.ts';
 
 function deferredCache() {
   const requests: { key: string; signal: AbortSignal; release: (value: string) => void; fail: (error: unknown) => void }[] = [];
@@ -34,12 +34,9 @@ test('cache is bounded, expires, retries errors and does not refill after clear 
   const retry = cache.get('failed'); await Promise.resolve(); requests[4].release('online'); equal(await retry, 'online');
   await rejects(cache.get('never', AbortSignal.abort())); equal(requests.length, 5);
 });
-test('look-ahead is a small ordered window and faster or shorter settles stay within the motion budget', () => {
+test('look-ahead is a small ordered window', () => {
   deepEqual(prefetchIds(['a', 'b', 'c', 'd'], 1), ['c', 'd', 'a']); deepEqual(prefetchIds(['a', 'b', 'c'], 2), ['b']); deepEqual(prefetchIds(['a'], 0), []);
   deepEqual(prefetchIds(['a', 'b'], -1), []); deepEqual(prefetchIds(['a', 'a', 'b'], 0), ['b']);
-  equal(snapDuration(800, 0, 800), 300); ok(snapDuration(100, 0, 800) < snapDuration(700, 0, 800)); ok(snapDuration(400, 3000, 800) < snapDuration(400, 0, 800));
-  for (const velocity of [-10000, -800, 0, 800, 10000]) { const duration = snapDuration(600, velocity, 800); ok(duration >= 160 && duration <= 300); }
-  equal(snapDuration(NaN, 0, 0), 240);
 });
 test('sticky profile and category changes preserve grid depth independently of header collapse', () => {
   const height = 180;

@@ -1,68 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="360" height="780" viewBox="0 0 360 780" role="img" aria-labelledby="title">
-  <title id="title">MyLike 内容库示意</title>
-  <defs>
-    <g id="image-mark" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-      <rect width="28" height="23" rx="4"/>
-      <circle cx="9" cy="7" r="2.2"/>
-      <path d="m4 19 7-6 4 3 5-6 4 4"/>
-    </g>
-    <g id="video-mark"><path d="M0 0v10l8-5z" fill="currentColor"/></g>
-    <g id="gallery-mark" fill="none" stroke="currentColor" stroke-width="1.4">
-      <rect x="0" y="1" width="8" height="8" rx="1.2"/>
-      <path d="M2 11h7a1 1 0 0 0 1-1V3"/>
-    </g>
-  </defs>
-  <rect x="1" y="1" width="358" height="778" rx="24" fill="#fbfbfd" stroke="#d8d9df" stroke-width="2"/>
-  <g font-family="system-ui, sans-serif">
-    <text x="25" y="36" font-size="13" fill="#24252a" font-weight="600">9:41</text>
-    <path d="M294 34v-3m4 3v-6m4 6v-9m4 9V22" stroke="#24252a" stroke-width="2" stroke-linecap="round"/>
-    <rect x="314" y="24" width="19" height="10" rx="2" fill="none" stroke="#24252a"/>
-    <rect x="316" y="26" width="14" height="6" rx="1" fill="#24252a"/>
-    <text x="17" y="83" font-size="23" fill="#17181d" font-weight="700">MyLike</text>
-    <rect x="162" y="61" width="141" height="33" rx="16.5" fill="#eeeef2"/>
-    <circle cx="177" cy="76" r="5" fill="none" stroke="#747681" stroke-width="1.5"/>
-    <path d="m181 80 4 4m137-12h16m-16 5h16m-16 5h16" stroke="#4b4d57" stroke-width="1.7" stroke-linecap="round"/>
-    <text x="190" y="82" font-size="12" fill="#6b6d77">搜索我的内容</text>
-    <text x="17" y="122" font-size="12" fill="#4b4d57">不限日期</text>
-    <text x="180" y="123" font-size="16" text-anchor="middle" fill="#17181d" font-weight="700">喜欢</text>
-    <text x="343" y="122" font-size="12" text-anchor="end" fill="#4b4d57">随机播放</text>
-    <path d="M14 136h332" stroke="#e7e7ec"/>
-    <path d="M153 136h54" stroke="#17181d" stroke-width="2.5"/>
-    <rect x="17" y="147" width="44" height="27" rx="6" fill="#e6e6eb"/>
-    <rect x="67" y="147" width="44" height="27" rx="6" fill="#f0f0f3"/>
-    <rect x="117" y="147" width="44" height="27" rx="6" fill="#f0f0f3"/>
-    <g font-size="12" text-anchor="middle" fill="#4b4d57">
-      <text x="39" y="165" font-weight="700">全部</text>
-      <text x="89" y="165">视频</text>
-      <text x="139" y="165">图集</text>
-      <text x="343" y="165" text-anchor="end">12 条</text>
-    </g>
-  </g>
-  <g>
-    <rect x="12" y="187" width="110" height="135" fill="#e5d9df"/>
-    <rect x="125" y="187" width="110" height="135" fill="#dbe2ec"/>
-    <rect x="238" y="187" width="110" height="135" fill="#e7e0d8"/>
-    <rect x="12" y="325" width="110" height="135" fill="#dde5e1"/>
-    <rect x="125" y="325" width="110" height="135" fill="#e8dee7"/>
-    <rect x="238" y="325" width="110" height="135" fill="#dce2ef"/>
-    <rect x="12" y="463" width="110" height="135" fill="#e7e0d8"/>
-    <rect x="125" y="463" width="110" height="135" fill="#dbe6e4"/>
-    <rect x="238" y="463" width="110" height="135" fill="#e7dce2"/>
-    <rect x="12" y="601" width="110" height="135" fill="#dce2ef"/>
-    <rect x="125" y="601" width="110" height="135" fill="#e5dce9"/>
-    <rect x="238" y="601" width="110" height="135" fill="#dde5e1"/>
-  </g>
-  <g color="#74717e" opacity=".65">
-    <use href="#image-mark" x="53" y="242"/><use href="#image-mark" x="166" y="242"/><use href="#image-mark" x="279" y="242"/>
-    <use href="#image-mark" x="53" y="380"/><use href="#image-mark" x="166" y="380"/><use href="#image-mark" x="279" y="380"/>
-    <use href="#image-mark" x="53" y="518"/><use href="#image-mark" x="166" y="518"/><use href="#image-mark" x="279" y="518"/>
-    <use href="#image-mark" x="53" y="656"/><use href="#image-mark" x="166" y="656"/><use href="#image-mark" x="279" y="656"/>
-  </g>
-  <g color="#66616f">
-    <use href="#video-mark" x="104" y="196"/><use href="#gallery-mark" x="216" y="196"/><use href="#video-mark" x="330" y="196"/>
-    <use href="#gallery-mark" x="103" y="334"/><use href="#video-mark" x="217" y="334"/><use href="#video-mark" x="330" y="334"/>
-    <use href="#video-mark" x="104" y="472"/><use href="#gallery-mark" x="216" y="472"/><use href="#video-mark" x="330" y="472"/>
-    <use href="#video-mark" x="104" y="610"/><use href="#video-mark" x="217" y="610"/><use href="#gallery-mark" x="329" y="610"/>
-  </g>
-  <rect x="122" y="760" width="116" height="4" rx="2" fill="#54555e"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="393" height="852" viewBox="0 0 393 852" role="img" aria-labelledby="title desc"><title id="title">MyLike 内容库示意</title><desc id="desc">MyLike v1.0.2 界面示意，使用虚构名称、数量与抽象占位画面，不含真实作品或用户数据。</desc><defs>
+  <clipPath id="phone"><rect x="1" y="1" width="391" height="850" rx="30"/></clipPath>
+  <linearGradient id="scene" x2="0.85" y2="1"><stop stop-color="#4b596b"/><stop offset=".5" stop-color="#33404f"/><stop offset="1" stop-color="#202632"/></linearGradient>
+  <linearGradient id="shade" x2="0" y2="1"><stop offset=".45" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".7"/></linearGradient>
+  <linearGradient id="cover" x2=".8" y2="1"><stop stop-color="#fff" stop-opacity=".06"/><stop offset="1" stop-color="#000" stop-opacity=".25"/></linearGradient>
+  <g id="search" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle r="7" cx="-2" cy="-2"/><path d="m3 3 6 6"/></g>
+  <g id="person" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cy="-5" r="6"/><path d="M-11 13v-3c0-8 22-8 22 0v3"/></g>
+  <g id="video" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="m-4-7 11 7-11 7Z"/></g>
+  <g id="album" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="-7" y="-7" width="11" height="11" rx="2"/><path d="M7-3v8a2 2 0 0 1-2 2h-8"/></g>
+  <g id="live" fill="none" stroke="currentColor" stroke-width="1.4"><circle r="3"/><circle r="6"/><path d="M-7-7a10 10 0 0 1 14 0M7 7A10 10 0 0 1-7 7" stroke-linecap="round"/></g>
+  <g id="heart"><path d="M0 12C-21-1-14-17-4-12L0-8l4-4C14-17 21-1 0 12Z" fill="currentColor"/></g>
+</defs><g font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',sans-serif" clip-path="url(#phone)"><rect width="393" height="852" fill="#151723"/><text x="27" y="35" font-size="15" fill="#f6f6fa" font-weight="600">9:41</text><g fill="#f6f6fa"><rect x="302" y="28" width="3" height="5" rx="1"/><rect x="307" y="25" width="3" height="8" rx="1"/><rect x="312" y="22" width="3" height="11" rx="1"/></g><g fill="none" stroke="#f6f6fa" stroke-width="1.8" stroke-linecap="round"><path d="M324 25q7-6 14 0m-11 3q4-3 8 0"/><circle cx="331" cy="32" r=".5"/><rect x="345" y="22" width="22" height="12" rx="3"/></g><rect x="347" y="24" width="16" height="8" rx="1.4" fill="#f6f6fa"/><path d="M369 26v4" stroke="#f6f6fa" stroke-width="2"/><circle cx="303" cy="84" r="22" fill="#ffffff08"/><use href="#search" transform="translate(303 84)" color="#c4c6d0"/><circle cx="355" cy="84" r="22" fill="#ffffff08"/><path d="M347 78h16m-16 6h16m-16 6h16" stroke="#c4c6d0" stroke-width="1.8" stroke-linecap="round"/>
+  <circle cx="56" cy="155" r="35.5" fill="none" stroke="#ffffff1a"/><circle cx="56" cy="155" r="31" fill="#262936"/><use href="#person" transform="translate(56 155)" color="#c4c6d0"/>
+  <text x="106" y="149" font-size="24" fill="#f6f6fa" font-weight="700">MyLike</text><g stroke="#9094a4" stroke-width="1.2" fill="none"><path d="m201 141 7-7 3 3-7 7-4 1Z"/></g><text x="106" y="174" font-size="12" fill="#9094a4" >自定义 ID</text>
+  <circle cx="351" cy="155" r="22" fill="#ffffff08" stroke="#ffffff0d"/><path d="m345 153 6 6 6-6" stroke="#c4c6d0" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="20" y="209" width="353" height="63" rx="18" fill="#1e212d" stroke="#ffffff0d"/><path d="M137.7 218v44m117.6-44v44" stroke="#ffffff14"/><text x="78.8" y="238" font-size="22" fill="#f6f6fa" text-anchor="middle" font-weight="700">36</text><text x="78.8" y="258" font-size="12" fill="#9094a4" text-anchor="middle">已导入</text><text x="196.5" y="238" font-size="22" fill="#f6f6fa" text-anchor="middle" font-weight="700">24</text><text x="196.5" y="258" font-size="12" fill="#9094a4" text-anchor="middle">喜欢</text><text x="314.2" y="238" font-size="22" fill="#f6f6fa" text-anchor="middle" font-weight="700">12</text><text x="314.2" y="258" font-size="12" fill="#9094a4" text-anchor="middle">收藏</text><text x="65.5" y="321" font-size="16" fill="#f6f6fa" text-anchor="middle" font-weight="700">全部</text><text x="196.5" y="321" font-size="16" fill="#9094a4" text-anchor="middle" font-weight="400">喜欢</text><text x="327.5" y="321" font-size="16" fill="#9094a4" text-anchor="middle" font-weight="400">收藏</text><rect x="53.5" y="332" width="24" height="3" rx="1.5" fill="#fc2f56"/>
+  <rect x="16" y="352" width="156" height="44" rx="12" fill="#ffffff08"/><rect x="19" y="355" width="50" height="38" rx="9" fill="#262936"/><text x="44" y="380" font-size="12" fill="#f6f6fa" text-anchor="middle" font-weight="600">全部</text><text x="94" y="380" font-size="12" fill="#9094a4" text-anchor="middle">视频</text><text x="144" y="380" font-size="12" fill="#9094a4" text-anchor="middle">图集</text>
+  <rect x="281" y="352" width="96" height="44" rx="12" fill="#ffffff08"/><g fill="none" stroke="#c4c6d0" stroke-width="1.3"><rect x="293" y="368" width="12" height="12" rx="2"/><path d="M293 372h12m-9-7v5m6-5v5"/></g><text x="340" y="380" font-size="12" fill="#c4c6d0" text-anchor="middle">不限日期</text>
+  <text x="16" y="432" font-size="12" fill="#9094a4" >36 条作品</text>
+  <rect x="193" y="404" width="87" height="44" rx="12" fill="#ffffff08"/><path d="m204 420 5 4-5 4" stroke="#c4c6d0" stroke-width="1.4" fill="none"/><text x="242" y="431" font-size="12" fill="#c4c6d0" text-anchor="middle">顺序播放</text>
+  <rect x="286" y="404" width="91" height="44" rx="12" fill="#fc2f56"/><path d="m297 420 5 4-5 4Z" fill="#fff"/><text x="338" y="431" font-size="12" fill="#fff" text-anchor="middle" font-weight="600">随机播放</text><svg x="0" y="460" width="130.33" height="171.5" viewBox="0 0 130.33 171.5"><rect width="131" height="172" fill="#444b59"/><circle cx="25" cy="45" r="53" fill="#fff" opacity=".035"/><path d="M-10 147 42 85 81 133 108 107 144 151V180H-10Z" fill="#151723" opacity=".16"/><rect width="131" height="172" fill="url(#cover)"/><use href="#video" transform="translate(65.2 85.8) scale(1.4)" color="#ffffff45"/><rect x="98.3" y="7" width="25" height="25" rx="7" fill="#0008"/><use href="#video" transform="translate(110.8 19.5) scale(.8)" color="#fff"/></svg><svg x="131.33" y="460" width="130.33" height="171.5" viewBox="0 0 130.33 171.5"><rect width="131" height="172" fill="#625158"/><circle cx="36" cy="52" r="53" fill="#fff" opacity=".035"/><path d="M-10 147 42 85 81 133 108 107 144 151V180H-10Z" fill="#151723" opacity=".16"/><rect width="131" height="172" fill="url(#cover)"/><use href="#album" transform="translate(65.2 85.8) scale(1.4)" color="#ffffff45"/><rect x="98.3" y="7" width="25" height="25" rx="7" fill="#0008"/><use href="#album" transform="translate(110.8 19.5) scale(.8)" color="#fff"/></svg><svg x="262.66" y="460" width="130.33" height="171.5" viewBox="0 0 130.33 171.5"><rect width="131" height="172" fill="#405760"/><circle cx="47" cy="59" r="53" fill="#fff" opacity=".035"/><path d="M-10 147 42 85 81 133 108 107 144 151V180H-10Z" fill="#151723" opacity=".16"/><rect width="131" height="172" fill="url(#cover)"/><use href="#video" transform="translate(65.2 85.8) scale(1.4)" color="#ffffff45"/><rect x="98.3" y="7" width="25" height="25" rx="7" fill="#0008"/><use href="#video" transform="translate(110.8 19.5) scale(.8)" color="#fff"/></svg><svg x="0" y="632.5" width="130.33" height="171.5" viewBox="0 0 130.33 171.5"><rect width="131" height="172" fill="#515763"/><circle cx="58" cy="66" r="53" fill="#fff" opacity=".035"/><path d="M-10 147 42 85 81 133 108 107 144 151V180H-10Z" fill="#151723" opacity=".16"/><rect width="131" height="172" fill="url(#cover)"/><use href="#live" transform="translate(65.2 85.8) scale(1.4)" color="#ffffff45"/><rect x="98.3" y="7" width="25" height="25" rx="7" fill="#0008"/><use href="#live" transform="translate(110.8 19.5) scale(.8)" color="#fff"/></svg><svg x="131.33" y="632.5" width="130.33" height="171.5" viewBox="0 0 130.33 171.5"><rect width="131" height="172" fill="#565064"/><circle cx="69" cy="73" r="53" fill="#fff" opacity=".035"/><path d="M-10 147 42 85 81 133 108 107 144 151V180H-10Z" fill="#151723" opacity=".16"/><rect width="131" height="172" fill="url(#cover)"/><use href="#video" transform="translate(65.2 85.8) scale(1.4)" color="#ffffff45"/><rect x="98.3" y="7" width="25" height="25" rx="7" fill="#0008"/><use href="#video" transform="translate(110.8 19.5) scale(.8)" color="#fff"/></svg><svg x="262.66" y="632.5" width="130.33" height="171.5" viewBox="0 0 130.33 171.5"><rect width="131" height="172" fill="#5d5c4e"/><circle cx="80" cy="80" r="53" fill="#fff" opacity=".035"/><path d="M-10 147 42 85 81 133 108 107 144 151V180H-10Z" fill="#151723" opacity=".16"/><rect width="131" height="172" fill="url(#cover)"/><use href="#album" transform="translate(65.2 85.8) scale(1.4)" color="#ffffff45"/><rect x="98.3" y="7" width="25" height="25" rx="7" fill="#0008"/><use href="#album" transform="translate(110.8 19.5) scale(.8)" color="#fff"/></svg><rect y="768" width="393" height="84" fill="#161616"/><path d="M0 768h393" stroke="#252525"/><text x="65.5" y="800" font-size="18" fill="#999" text-anchor="middle" font-weight="600">首页</text><rect x="177.5" y="778" width="38" height="30" rx="8" stroke="#fff" stroke-width="2.2" fill="none"/><path d="M189 793h15m-7.5-7.5v15" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><text x="327.5" y="800" font-size="18" fill="#fff" text-anchor="middle" font-weight="600">我</text><rect x="133" y="831" width="127" height="5" rx="2.5" fill="#fff"/></g><rect x="1" y="1" width="391" height="850" rx="30" stroke="#ffffff22" fill="none"/></svg>

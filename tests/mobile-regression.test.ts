@@ -10,6 +10,7 @@ import { accountsSchema, addAccount, readAccounts, selectAccount } from '../src/
 import type { QueryDb } from '../src/mobile/local-data.ts';
 import { parseSession, shuffled, type Session } from '../src/mobile/model.ts';
 import { createStore } from '../src/mobile/store-core.ts';
+import { createTransitionWork } from '../src/mobile/transition-work.ts';
 
 const A = '7637322941528689935'; const B = '7637322941528689936'; const C = '7637322941528689937';
 const travel = 'a'.repeat(64); const photos = 'b'.repeat(64); const empty = 'c'.repeat(64);
@@ -128,6 +129,32 @@ test('real disk reopening preserves accounts, local overrides, video/gallery pro
     // Only generated files in this test's newly created directory; no recursive removal.
     for (const name of readdirSync(directory)) unlinkSync(join(directory, name)); rmdirSync(directory);
   }
+});
+
+test('settle-deferred progress reaches history and continuation before reads, in the original account only', async () => {
+  const a = connect(); const b = connect();
+  const writes = createTransitionWork(() => { throw new Error('unexpected database failure'); });
+  try {
+    await a.store.importCollection(likes()); await b.store.importCollection(likes());
+    const session: Session = { ids: [A, B], index: 0, mode: 'ordered', point: { kind: 'video', value: 1 } };
+    await a.store.writeBookmarkQueue('home:all', session);
+    await a.store.visit('swipe-a', A, session.point, { session, scope: { source: 'all' }, title: '推荐' });
+    const { updateWatchPoint, writeBookmarkPoint, visit } = a.store;
+    writes.hold(true);
+    writes.enqueue(() => updateWatchPoint('swipe-a', A, { kind: 'video', value: 3 }), 'A');
+    writes.enqueue(() => visit('swipe-a', B, { kind: 'gallery', value: 0 }));
+    writes.enqueue(() => updateWatchPoint('swipe-a', A, { kind: 'video', value: 4 }), 'A');
+    writes.enqueue(() => updateWatchPoint('swipe-a', B, { kind: 'gallery', value: 2 }), 'B');
+    writes.enqueue(() => writeBookmarkPoint('home:all', B, { kind: 'gallery', value: 2 }), 'bookmark');
+    equal((await a.store.continuation())?.session.index, 0);
+    writes.hold(false);
+    // No flush await: these reads must already observe the complete store queue.
+    const resumed = await a.store.continuation();
+    equal(resumed?.session.index, 1); deepEqual(resumed?.session.point, { kind: 'gallery', value: 2 });
+    deepEqual(parseSession(await a.store.readBookmark('home:all'))?.point, { kind: 'gallery', value: 2 });
+    equal((await a.store.history()).find(row => row.id === A)?.pointValue, 4);
+    equal(await b.store.continuation(), null); deepEqual(await b.store.history(), []);
+  } finally { await writes.flush(); a.sqlite.close(); b.sqlite.close(); }
 });
 
 test('opening the released v1 database keeps its works and old bookmark without guessing like membership', async () => {

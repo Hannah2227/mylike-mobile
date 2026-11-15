@@ -2,13 +2,18 @@ export function prefetchIds(ids: readonly string[], index: number) {
   if (!Number.isInteger(index) || index < 0 || index >= ids.length) return [];
   return [...new Set([ids[index + 1], ids[index + 2], ids[index - 1]].filter((id): id is string => Boolean(id) && id !== ids[index]))];
 }
-export function snapDuration(remaining: number, velocity: number, extent: number) {
+export function snapSpring(remaining: number, velocity: number, extent: number) {
   'worklet';
-  if (![remaining, velocity, extent].every(Number.isFinite) || extent <= 0) return 240;
-  const distance = Math.min(1, Math.abs(remaining) / extent);
-  const natural = 180 + distance * 120;
-  const flick = Math.abs(velocity) > 750 ? Math.abs(remaining / velocity) * 1000 : natural;
-  return Math.round(Math.max(160, Math.min(300, natural, flick)));
+  const distance = Number.isFinite(remaining) ? Math.abs(remaining) : 0;
+  const size = Number.isFinite(extent) && extent > 0 ? extent : 800;
+  const seconds = 0.07 + 0.18 * Math.sqrt(Math.min(1, distance / size));
+  const omega = 9 / seconds;
+  const toward = Math.sign(remaining);
+  const speed = Number.isFinite(velocity) && distance > 0.5 ? Math.max(0, toward * velocity) : 0;
+  // Critically damped, with the actual release velocity in the target direction.
+  // Short remaining distances get a quicker finish instead of a 160ms floor.
+  return { mass: 1, stiffness: omega * omega, damping: 2 * omega,
+    velocity: toward * Math.min(size * 12, speed) || 0, overshootClamping: true, energyThreshold: 1e-6 };
 }
 export function libraryOffset(previous: number, previousCollapse: number, collapsed: number) {
   'worklet';

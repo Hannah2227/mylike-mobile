@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { restoreSession, shuffled, type Point, type Scope, type Session } from './model';
 import { useMobile } from './context';
+import { createTransitionWork } from './transition-work';
 let activationNumber = 0;
 
 export function useSession(key: string, scope: Scope, initial?: Session, title = '继续观看') {
@@ -19,22 +20,24 @@ export function useSession(key: string, scope: Scope, initial?: Session, title =
   const initialRef = useRef(initial); initialRef.current = initial;
   const titleRef = useRef(title); titleRef.current = title;
   const watched = useRef(''); const token = useRef(''); const queueRecorded = useRef(false);
-  const enqueue = useCallback((operation: () => Promise<void>) => {
-    void operation().catch(() => setError('未能保存播放进度，请重试。'));
-  }, []);
+  const alive = useRef(true);
+  const writes = useMemo(() => createTransitionWork(() => { if (alive.current) setError('未能保存播放进度，请重试。'); }), []);
+  const enqueue = useCallback((operation: () => Promise<void>, taskKey?: string) => writes.enqueue(operation, taskKey), [writes]);
+  const deferWrites = useCallback((value: boolean) => writes.hold(value), [writes]);
+  useEffect(() => { alive.current = true; return () => { alive.current = false; void writes.flush(); }; }, [writes]);
   const suspend = useCallback(() => {
     const value = current.current; const last = point.current;
-    if (watched.current && value && last) { const activeToken = token.current; const id = watched.current; enqueue(() => updateWatchPoint(activeToken, id, last)); }
+    if (watched.current && value && last) { const activeToken = token.current; const id = watched.current; enqueue(() => updateWatchPoint(activeToken, id, last), `watch:${activeToken}:${id}`); }
     watched.current = ''; token.current = ''; queueRecorded.current = false;
   }, [enqueue]);
   const select = useCallback((value: Session, replaceQueue = true) => {
     const previousPoint = point.current; const previousId = watched.current; const activeToken = token.current;
-    if (previousId && previousPoint) enqueue(() => updateWatchPoint(activeToken, previousId, previousPoint));
+    if (previousId && previousPoint) enqueue(() => updateWatchPoint(activeToken, previousId, previousPoint), `watch:${activeToken}:${previousId}`);
     watched.current = ''; if (replaceQueue) { token.current = ''; queueRecorded.current = false; }
     current.current = value; point.current = value.point; savedAt.current = Date.now(); setSession(value);
     const storageKey = keyRef.current;
     if (replaceQueue) { setVersion(v => v + 1); if (persistent) enqueue(() => writeBookmarkQueue(storageKey, value)); }
-    else if (persistent) enqueue(() => writeBookmarkPoint(storageKey, value.ids[value.index], value.point));
+    else if (persistent) enqueue(() => writeBookmarkPoint(storageKey, value.ids[value.index], value.point), `bookmark:${storageKey}`);
   }, [enqueue, persistent]);
   useEffect(() => {
     const request = ++generation.current; let mounted = true;
@@ -48,9 +51,10 @@ export function useSession(key: string, scope: Scope, initial?: Session, title =
       mounted = false; generation.current++;
       suspend();
       const value = current.current; const last = point.current;
-      if (persistent && value?.ids[value.index]) enqueue(() => writeBookmarkPoint(key, value.ids[value.index], last));
+      writes.hold(false);
+      if (persistent && value?.ids[value.index]) enqueue(() => writeBookmarkPoint(key, value.ids[value.index], last), `bookmark:${key}`);
     };
-  }, [key, select, enqueue, persistent, suspend]);
+  }, [key, select, enqueue, persistent, suspend, writes]);
   const watch = useCallback((id: string, at: Point) => {
     const active = current.current; if (!active || active.ids[active.index] !== id || watched.current === id) return;
     token.current ||= `${keyRef.current}:${Date.now()}:${++activationNumber}`;
@@ -64,8 +68,8 @@ export function useSession(key: string, scope: Scope, initial?: Session, title =
     point.current = value;
     if (!force && Date.now() - savedAt.current < 3000) return;
     savedAt.current = Date.now(); const storageKey = keyRef.current;
-    if (persistent) enqueue(() => writeBookmarkPoint(storageKey, id, value));
-    if (watched.current === id) { const activeToken = token.current; enqueue(() => updateWatchPoint(activeToken, id, value)); }
+    if (persistent) enqueue(() => writeBookmarkPoint(storageKey, id, value), `bookmark:${storageKey}`);
+    if (watched.current === id) { const activeToken = token.current; enqueue(() => updateWatchPoint(activeToken, id, value), `watch:${activeToken}:${id}`); }
   }, [enqueue, persistent]);
   const moveTo = useCallback((index: number) => {
     const active = current.current;
@@ -92,5 +96,5 @@ export function useSession(key: string, scope: Scope, initial?: Session, title =
     if (keyRef.current === 'home:all') { void refresh(); return true; }
     return false;
   }, [moveTo, refresh]);
-  return { session, version, loading, error, checkpoint, moveTo, refresh, reshuffle, next, watch, suspend };
+  return { session, version, loading, error, checkpoint, moveTo, refresh, reshuffle, next, watch, suspend, deferWrites };
 }

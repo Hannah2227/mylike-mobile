@@ -1,6 +1,7 @@
 import { deepEqual, equal } from 'node:assert/strict';
 import { test } from 'node:test';
-import { createPlaybackHandoff, createPlaybackIntent, resumeSeekTarget } from '../src/mobile/playback.ts';
+import { createFramePrewarm, createPlaybackHandoff, createPlaybackIntent, resumeSeekTarget } from '../src/mobile/playback.ts';
+import { createFrameProbe } from '../src/mobile/frame-metrics.ts';
 test('promotion preserves a decoded first frame but restores a real saved position', () => {
   equal(resumeSeekTarget(0, 0, 60), null); equal(resumeSeekTarget(0, 0.05, 60), null); equal(resumeSeekTarget(0, 0.1, 60), null);
   equal(resumeSeekTarget(24, 0.05, 60), 24); equal(resumeSeekTarget(24, 24.03, 60), null);
@@ -58,4 +59,39 @@ test('playback handoff silences the old player before unmuting its replacement',
   handoff.activate(first); handoff.deactivate(third);
   equal(first.muted, false); equal(second.muted, true); equal(third.muted, true);
   handoff.deactivate(first); equal(first.muted, true);
+});
+test('late native readiness and metadata updates preserve the same muted prime ticket', () => {
+  const target = nativeTarget(); const intent = createPlaybackIntent(target, createPlaybackHandoff());
+  equal(intent.sync(false, 1, true), 'warm'); equal(target.pauses, 0);
+  const ticket = intent.beginPrime()!;
+  for (let event = 0; event < 4; event++) equal(intent.sync(false, 1, true), 'warm');
+  equal(target.pauses, 0); equal(target.plays, 1); equal(intent.finishPrime(ticket), true);
+  intent.play(1); equal(intent.sync(false, 1, true), 'stop'); equal(target.muted, true);
+  const next = intent.beginPrime()!; equal(intent.sync(false, 1, false), 'stop'); equal(intent.finishPrime(next), false);
+});
+test('prewarm holds near the beginning, waits for frame confirmation and bounds failed attempts', () => {
+  const target = { ...nativeTarget(), currentTime: 0.06 }; const intent = createPlaybackIntent(target, createPlaybackHandoff());
+  const warm = createFramePrewarm(intent, target); const first = warm.begin()!;
+  equal(warm.begin(), null); equal(warm.hold(), true); equal(warm.hold(), false);
+  equal(target.currentTime, 0.06); equal(warm.ticket(), first); // time advancing alone is not frame confirmation
+  equal(warm.finish(first), true); equal(warm.ticket(), null);
+  const retry = warm.begin()!; target.currentTime = 0.7; equal(warm.hold(), true); equal(target.currentTime, 0);
+  equal(warm.finish(retry), true); equal(warm.begin(), null); // no infinite silent decoding
+});
+test('promotion and disposal revoke every old prime hold, timeout and rewind', () => {
+  const target = { ...nativeTarget(), currentTime: 0.5 }; const intent = createPlaybackIntent(target, createPlaybackHandoff());
+  const warm = createFramePrewarm(intent, target); const ticket = warm.begin()!;
+  intent.sync(true, 1, false); const before = target.pauses;
+  equal(warm.hold(), false); equal(warm.finish(ticket), false); equal(target.pauses, before); equal(target.currentTime, 0.5);
+  intent.stop(); const other = warm.begin()!; warm.cancel(); intent.stop();
+  equal(warm.finish(other), false); equal(warm.hold(), false); equal(target.currentTime, 0.5);
+});
+test('first-frame measurements distinguish decoded neighbors from cold starts without identifiers', () => {
+  let time = 0; const values: { prepared: boolean; afterSelectionMs: number }[] = [];
+  const warm = createFrameProbe(() => time, value => values.push(value));
+  time = 40; warm.frame(); time = 1000; warm.select(); warm.select(); warm.frame();
+  deepEqual(values, [{ prepared: true, afterSelectionMs: 0 }]);
+  warm.leave(); time = 2000; warm.select(); equal(values.length, 2); // the same native instance is still decoded
+  const cold = createFrameProbe(() => time, value => values.push(value)); cold.select(); time = 2286.4; cold.frame();
+  deepEqual(values[2], { prepared: false, afterSelectionMs: 286 });
 });

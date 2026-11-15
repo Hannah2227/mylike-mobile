@@ -3,18 +3,19 @@ import { StyleSheet, Text, View } from 'react-native';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import Animated, { useAnimatedReaction, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
+import type { PagerGesture } from './player-types';
 
 export function clock(value: number) { const s = Math.max(0, Math.floor(value)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
-export function SeekRail({ enabled, seconds, duration, paused, clear, bottom = 0, onBegin, onCommit, onCancel }: {
+export function SeekRail({ enabled, seconds, duration, paused, clear, bottom = 0, native, onBegin, onCommit, onCancel }: {
   enabled: boolean; seconds: number; duration: number; paused: boolean; clear: boolean;
-  bottom?: number; onBegin: () => void; onCommit: (seconds: number) => void; onCancel: () => void;
+  bottom?: number; native?: PagerGesture; onBegin: () => void; onCommit: (seconds: number) => void; onCancel: () => void;
 }) {
   const width = useSharedValue(1); const drag = useSharedValue(false); const position = useSharedValue(0);
   const [scrubbing, setScrubbing] = useState(false); const [display, setDisplay] = useState(0);
   useEffect(() => { if (!drag.value) position.value = duration ? seconds / duration : 0; }, [seconds, duration, drag, position]);
   useAnimatedReaction(() => Math.floor(position.value * duration), (value, before) => { if (drag.value && value !== before) scheduleOnRN(setDisplay, value); });
   const style = useAnimatedStyle(() => ({ width: `${Math.max(0, Math.min(1, position.value)) * 100}%` }));
-  const pan = usePanGesture({ enabled: enabled && duration > 0, activeOffsetX: [-6, 6], failOffsetY: [-12, 12],
+  const pan = usePanGesture({ enabled: enabled && duration > 0, activeOffsetX: [-6, 6], failOffsetY: [-12, 12], block: native,
     onActivate: e => { 'worklet'; drag.value = true; position.value = Math.max(0, Math.min(1, e.x / width.value)); scheduleOnRN(setScrubbing, true); scheduleOnRN(onBegin); },
     onUpdate: e => { 'worklet'; position.value = Math.max(0, Math.min(1, e.x / width.value)); },
     onDeactivate: e => { 'worklet'; if (e.canceled) scheduleOnRN(onCancel); else scheduleOnRN(onCommit, position.value * duration); },

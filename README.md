@@ -25,8 +25,8 @@
     <th>内容库</th>
   </tr>
   <tr>
-    <td><img src="assets/readme/playback.svg" width="280" alt="MyLike 播放页示意" /></td>
-    <td><img src="assets/readme/library.svg" width="280" alt="MyLike 内容库示意" /></td>
+    <td><img src="assets/readme/playback.svg?v=1.0.2" width="280" alt="MyLike 播放页示意" /></td>
+    <td><img src="assets/readme/library.svg?v=1.0.2" width="280" alt="MyLike 内容库示意" /></td>
   </tr>
 </table>
 </div>

@@ -1,29 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="360" height="780" viewBox="0 0 360 780" role="img" aria-labelledby="title">
-  <title id="title">MyLike 播放页示意</title>
-  <defs>
-    <linearGradient id="placeholder" x1="0" x2="1" y1="0" y2="1">
-      <stop stop-color="#2b3345"/>
-      <stop offset="1" stop-color="#513544"/>
-    </linearGradient>
-  </defs>
-  <rect x="1" y="1" width="358" height="778" rx="24" fill="#15161b" stroke="#373941" stroke-width="2"/>
-  <g fill="#f2f2f4" font-family="system-ui, sans-serif">
-    <text x="25" y="36" font-size="13" font-weight="600">9:41</text>
-    <path d="M294 34v-3m4 3v-6m4 6v-9m4 9V22" stroke="#f2f2f4" stroke-width="2" stroke-linecap="round"/>
-    <rect x="314" y="24" width="19" height="10" rx="2" fill="none" stroke="#f2f2f4"/>
-    <rect x="316" y="26" width="14" height="6" rx="1"/>
-  </g>
-  <rect x="16" y="112" width="328" height="506" rx="12" fill="url(#placeholder)"/>
-  <g fill="none" stroke="#e8e0e9" stroke-width="3" opacity=".72" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="144" y="318" width="72" height="54" rx="9"/>
-    <path d="m174 332 18 13-18 13z"/>
-  </g>
-  <text x="180" y="398" fill="#dcd3df" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14">视频占位</text>
-  <g fill="#f2f2f4" font-family="system-ui, sans-serif">
-    <text x="21" y="661" font-size="17" font-weight="700">@示例作者</text>
-    <text x="21" y="687" font-size="14">视频标题与说明</text>
-  </g>
-  <rect x="21" y="716" width="318" height="3" rx="1.5" fill="#575963"/>
-  <rect x="21" y="716" width="103" height="3" rx="1.5" fill="#ff6488"/>
-  <rect x="122" y="760" width="116" height="4" rx="2" fill="#f2f2f4"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="393" height="852" viewBox="0 0 393 852" role="img" aria-labelledby="title desc"><title id="title">MyLike 播放页示意</title><desc id="desc">MyLike v1.0.2 界面示意，使用虚构名称、数量与抽象占位画面，不含真实作品或用户数据。</desc><defs>
+  <clipPath id="phone"><rect x="1" y="1" width="391" height="850" rx="30"/></clipPath>
+  <linearGradient id="scene" x2="0.85" y2="1"><stop stop-color="#4b596b"/><stop offset=".5" stop-color="#33404f"/><stop offset="1" stop-color="#202632"/></linearGradient>
+  <linearGradient id="shade" x2="0" y2="1"><stop offset=".45" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".7"/></linearGradient>
+  <linearGradient id="cover" x2=".8" y2="1"><stop stop-color="#fff" stop-opacity=".06"/><stop offset="1" stop-color="#000" stop-opacity=".25"/></linearGradient>
+  <g id="search" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle r="7" cx="-2" cy="-2"/><path d="m3 3 6 6"/></g>
+  <g id="person" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cy="-5" r="6"/><path d="M-11 13v-3c0-8 22-8 22 0v3"/></g>
+  <g id="video" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="m-4-7 11 7-11 7Z"/></g>
+  <g id="album" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="-7" y="-7" width="11" height="11" rx="2"/><path d="M7-3v8a2 2 0 0 1-2 2h-8"/></g>
+  <g id="live" fill="none" stroke="currentColor" stroke-width="1.4"><circle r="3"/><circle r="6"/><path d="M-7-7a10 10 0 0 1 14 0M7 7A10 10 0 0 1-7 7" stroke-linecap="round"/></g>
+  <g id="heart"><path d="M0 12C-21-1-14-17-4-12L0-8l4-4C14-17 21-1 0 12Z" fill="currentColor"/></g>
+</defs><g font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',sans-serif" clip-path="url(#phone)"><rect width="393" height="852" fill="#151723"/><rect width="393" height="768" fill="url(#scene)"/>
+  <circle cx="299" cy="284" r="118" fill="#6b7c8f" opacity=".15"/><circle cx="67" cy="477" r="173" fill="#91a0b4" opacity=".09"/>
+  <path d="M0 569 121 418 226 551 299 473 393 591V768H0Z" fill="#1b2431" opacity=".4"/>
+  <rect width="393" height="768" fill="url(#shade)"/><text x="27" y="35" font-size="15" fill="#f6f6fa" font-weight="600">9:41</text><g fill="#f6f6fa"><rect x="302" y="28" width="3" height="5" rx="1"/><rect x="307" y="25" width="3" height="8" rx="1"/><rect x="312" y="22" width="3" height="11" rx="1"/></g><g fill="none" stroke="#f6f6fa" stroke-width="1.8" stroke-linecap="round"><path d="M324 25q7-6 14 0m-11 3q4-3 8 0"/><circle cx="331" cy="32" r=".5"/><rect x="345" y="22" width="22" height="12" rx="3"/></g><rect x="347" y="24" width="16" height="8" rx="1.4" fill="#f6f6fa"/><path d="M369 26v4" stroke="#f6f6fa" stroke-width="2"/>
+  <text x="139" y="94" font-size="15" fill="#ffffffe6" text-anchor="middle" font-weight="600">推荐</text><text x="196.5" y="94" font-size="15" fill="#ffffff85" text-anchor="middle">喜欢</text><text x="254" y="94" font-size="15" fill="#ffffff85" text-anchor="middle">收藏</text><rect x="126" y="103" width="26" height="2.5" rx="1.25" fill="#ffffffe6"/>
+  <g color="#ffffffb3"><use href="#video" transform="translate(196.5 383) scale(2.2)"/></g>
+  <text x="196.5" y="429" font-size="13" fill="#ffffff65" text-anchor="middle" letter-spacing="3">视频画面</text>
+  <g transform="translate(363 407)"><circle r="22" fill="#52626a" stroke="#fff" stroke-width="1.5"/><use href="#person" color="#dce1e6" transform="scale(.85)"/></g>
+  <g transform="translate(363 469)" color="#fc2f56"><use href="#heart" transform="scale(1.05)"/></g><text x="363" y="501" font-size="12" fill="#ffffffe6" text-anchor="middle">喜欢</text>
+  <path d="M350 523h26a4 4 0 0 1 4 4v15a4 4 0 0 1-4 4h-12l-9 7v-7h-5a4 4 0 0 1-4-4v-15a4 4 0 0 1 4-4Z" fill="#fff"/><g fill="#48515d"><circle cx="355" cy="535" r="1.7"/><circle cx="363" cy="535" r="1.7"/><circle cx="371" cy="535" r="1.7"/></g><text x="363" y="567" font-size="12" fill="#ffffffe6" text-anchor="middle">评论</text>
+  <path d="m363 586 5 10 11 2-8 8 2 11-10-5-10 5 2-11-8-8 11-2Z" fill="#fff"/><text x="363" y="633" font-size="12" fill="#ffffffe6" text-anchor="middle">收藏</text>
+  <path d="m367 654 14 12-14 12v-8c-10-1-16 4-21 10 1-13 8-19 21-19Z" fill="#fff"/><text x="363" y="699" font-size="12" fill="#ffffffe6" text-anchor="middle">分享</text>
+  <text x="12" y="695" font-size="18" fill="#fff" font-weight="700">@示例作者</text><text x="12" y="726" font-size="15.5" fill="#ffffffe6" >把喜欢，再喜欢一遍。</text>
+  <rect x="12" y="762" width="369" height="2" rx="1" fill="#ffffff40"/><rect x="12" y="762" width="116" height="2" rx="1" fill="#ffffffb3"/>
+  <rect y="768" width="393" height="84" fill="#161616"/><path d="M0 768h393" stroke="#252525"/><text x="65.5" y="800" font-size="18" fill="#fff" text-anchor="middle" font-weight="600">首页</text><rect x="177.5" y="778" width="38" height="30" rx="8" stroke="#fff" stroke-width="2.2" fill="none"/><path d="M189 793h15m-7.5-7.5v15" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><text x="327.5" y="800" font-size="18" fill="#999" text-anchor="middle" font-weight="600">我</text><rect x="133" y="831" width="127" height="5" rx="2.5" fill="#fff"/></g><rect x="1" y="1" width="391" height="850" rx="30" stroke="#ffffff22" fill="none"/></svg>

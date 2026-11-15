@@ -18,7 +18,8 @@ import { FolderSheet } from './FolderSheet';
 import { feedChrome, mediaAreaHeight } from './layout';
 import { Button, IconButton, ui } from './ui';
 import { useSession } from './useSession';
-import { WorkPager, type PagerHandle } from './WorkPager';
+import type { PagerGesture, PagerHandle } from './player-types';
+import { FeedPager } from './FeedPager';
 import { ActionSheet } from './ActionSheet';
 import { ShareActions } from './WorkActions';
 import { usePrefetch } from './usePrefetch';
@@ -45,8 +46,17 @@ export function FeedScreen({ source = 'all', visible = true, initial, scope: sup
   const toolbarLayout = { bottom: chrome.toolbarBottom, right: chrome.right, gap: chrome.gap };
   const scope = useMemo<Scope>(() => suppliedScope ?? { source }, [suppliedScope, source]);
   const playback = useSession(sessionKey ?? `home:${source}`, scope, initial, title || (source === 'all' ? '推荐' : source === 'likes' ? '喜欢' : '收藏'));
-  const { session, version, loading, error, checkpoint, moveTo, refresh, reshuffle, watch, suspend } = playback;
+  const { session, version, loading, error, checkpoint, moveTo, refresh, reshuffle, watch, suspend, deferWrites } = playback;
+  const [moving, setMoving] = useState(false); const mounted = useRef(true);
+  const movingRef = useRef(false); const deferredTime = useRef<{ id: string; seconds: number; duration: number } | null>(null);
+  const motion = useCallback((value: boolean) => {
+    if (!mounted.current) return;
+    movingRef.current = value; deferWrites(value); setMoving(value);
+    if (!value) { const pending = deferredTime.current; deferredTime.current = null; if (pending?.id === idRef.current) setTime(previous => ({ seconds: pending.seconds, duration: pending.duration > 0 ? pending.duration : previous.duration })); }
+  }, [deferWrites]);
+  useLayoutEffect(() => { mounted.current = true; return () => { mounted.current = false; deferWrites(false); }; }, [deferWrites]);
   const id = session?.ids[session.index] ?? ''; const idRef = useRef(id); idRef.current = id;
+  const playbackStateId = useRef(id); const playbackIds = useRef(session?.ids); playbackIds.current = session?.ids;
   const [side, setSide] = useState<Side>('feed'); const [prepared, setPrepared] = useState(false);
   const [info, setInfo] = useState<MediaInfo>(emptyInfo); const [paused, setPaused] = useState(false); const [edgeHeld, setEdgeHeld] = useState(false); const [seeking, setSeeking] = useState(false); const [pinching, setPinching] = useState(false);
   const [boostLocked, setBoostLocked] = useState(false); const [boostTarget, setBoostTarget] = useState(false);
@@ -68,14 +78,23 @@ export function FeedScreen({ source = 'all', visible = true, initial, scope: sup
   const allowZoom = !comments && settledMediaKey === mediaLayoutKey;
   const pager = useRef<PagerHandle | null>(null); const control = useRef<MediaControl | null>(null);
   const handoff = useMemo(createPlaybackHandoff, []);
+  const targetPlayback = useCallback((index: number | null, requestedAt?: number) => handoff.prepare(index === null ? null : playbackIds.current?.[index] ?? null, requestedAt), [handoff]);
+  const commitPlayback = useCallback((index: number, arrivedAt?: number) => {
+    const workId = playbackIds.current?.[index];
+    if (workId) {
+      if (control.current?.id !== workId) control.current?.silence?.();
+      handoff.arrive(workId, arrivedAt);
+    }
+    moveTo(index);
+  }, [handoff, moveTo]);
   const pendingAuto = useRef<string | null>(null);
   const current = info.id === id ? info : previews[id] ?? emptyInfo;
   const requestedPhoto = photoPage?.id === id ? photoPage.index : session?.point?.kind === 'gallery' ? session.point.value : 0;
   const photo = current.data && 'images' in current.data ? Math.max(0, Math.min(current.photos - 1, requestedPhoto)) : requestedPhoto;
   const gallery = current.data ? 'images' in current.data : current.work?.kind !== 'video' && Boolean(current.work);
   const boostable = !gallery || current.hasLive;
-  const boosted = (edgeHeld || boostLocked) && boostable;
-  const mediaPaused = paused && !(edgeHeld && boostable);
+  const boosted = playbackStateId.current === id && (edgeHeld || boostLocked) && boostable;
+  const mediaPaused = playbackStateId.current === id && paused && !(edgeHeld && boostable);
   const chromeHidden = preferences.clear || edgeHeld;
   const playing = focused && visible && foreground && height > 0 && side === 'feed' && !importing && !loading && panel === null && !groupId;
   const interactive = playing && !comments && !seeking;
@@ -90,6 +109,7 @@ export function FeedScreen({ source = 'all', visible = true, initial, scope: sup
     if (session && !session.ids.length) void refresh();
   }, [revision, session, refresh]);
   useLayoutEffect(() => {
+    playbackStateId.current = id;
     setPaused(false); setEdgeHeld(false); setBoostLocked(false); setBoostTarget(false); setPinching(false); setSeeking(false); setReadyId(''); setAvatarFailed(false); setTime({ seconds: 0, duration: 0 });
     setPrepared(false);
   }, [id]);
@@ -104,7 +124,8 @@ export function FeedScreen({ source = 'all', visible = true, initial, scope: sup
   }, []);
   const receiveTime = useCallback((workId: string, seconds: number, duration: number, force: boolean) => {
     if (workId !== idRef.current) return;
-    setTime(previous => ({ seconds, duration: duration > 0 ? duration : previous.duration }));
+    if (movingRef.current) deferredTime.current = { id: workId, seconds, duration };
+    else setTime(previous => ({ seconds, duration: duration > 0 ? duration : previous.duration }));
     if (!force && seconds > 0) watch(workId, { kind: 'video', value: seconds });
     checkpoint(workId, { kind: 'video', value: seconds }, force);
   }, [checkpoint, watch]);
@@ -141,26 +162,29 @@ export function FeedScreen({ source = 'all', visible = true, initial, scope: sup
   useLayoutEffect(() => { cancelAnimation(x); x.value = side === 'author' ? -width : 0; }, [width]);
   const liked = marks[id]?.liked ?? current.work?.liked ?? false;
   const saved = marks[id]?.saved ?? current.work?.saved ?? false;
-  function like() { if (id && current.work) { if (!liked) setMark(id, 'liked', true); heart.value = 1; heart.value = withTiming(0, { duration: 750 }); } }
-  function changePhoto(index: number) { setPhotoPage({ id, index }); checkpoint(id, { kind: 'gallery', value: index }, true); }
-  function next() {
-    if (!session || comments || panel || !playing) return false;
-    if (pinching) { pendingAuto.current = id; return true; }
+  const like = useCallback(() => { if (id && current.work) { if (!liked) setMark(id, 'liked', true); heart.value = 1; heart.value = withTiming(0, { duration: 750 }); } }, [id, current.work, liked, setMark, heart]);
+  const changePhoto = useCallback((index: number) => { setPhotoPage({ id, index }); checkpoint(id, { kind: 'gallery', value: index }, true); }, [id, checkpoint]);
+  const togglePause = useCallback(() => setPaused(value => !value), []);
+  const holdOptions = useCallback(() => setPanel('options'), []);
+  const next = useCallback(() => {
+    if (!session || comments || panel || !playing || paused) return false;
+    if (pinching || moving || pager.current?.isMoving?.()) { pendingAuto.current = id; return true; }
     if (session.index + 1 < session.ids.length) return pager.current?.go(session.index + 1) ?? false;
     if (!onBack && source === 'all') { void refresh(); return true; }
     return false;
-  }
+  }, [session, comments, panel, playing, paused, pinching, moving, id, onBack, source, refresh]);
   useEffect(() => {
-    if (pinching || !playing || !pendingAuto.current) return;
+    if (paused) { pendingAuto.current = null; return; }
+    if (pinching || moving || !playing || !pendingAuto.current) return;
     const pending = pendingAuto.current; pendingAuto.current = null;
     if (pending === id && preferences.auto && !next()) setPaused(true);
-  }, [pinching, playing, id, preferences.auto]);
+  }, [pinching, moving, playing, paused, id, preferences.auto, next]);
   function retry() { setPaused(false); control.current?.retry(); }
   const author = current.data?.author || current.work?.author || '未知作者';
   const authorGroup = current.work?.author || author;
   const countLabel = (value: number | undefined, fallback: string) => value === undefined ? fallback : value >= 10000 ? `${(value / 10000).toFixed(1)}万` : String(value);
   function openAuthorWork(value: Session, selectedScope: Scope, label: string) { onOpen(value, selectedScope, label); }
-  const renderChrome = (workId: string, active: boolean) => !active ? <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+  const renderChrome = (workId: string, active: boolean, native?: PagerGesture) => !active ? <View pointerEvents="none" style={StyleSheet.absoluteFill}>
     {!chromeHidden && previews[workId]?.work && <><View style={[styles.caption, captionLayout]}><Text style={styles.author}>@{previews[workId].work?.author}</Text><Text pointerEvents="none" numberOfLines={3} style={styles.description}>{previews[workId].work?.title}</Text></View>
       <View style={[styles.toolbar, toolbarLayout]}><View style={styles.avatar}><Text style={ui.text}>{previews[workId].work?.author.slice(0, 1)}</Text></View>
         <View style={styles.tool}><View style={ui.icon}><Ionicons name="heart" size={34} color={(marks[workId]?.liked ?? previews[workId].work?.liked) ? '#fc2f56' : '#fff'} /></View><Text style={styles.toolLabel}>{countLabel(previews[workId].data?.statistics?.likes, '喜欢')}</Text></View>
@@ -188,21 +212,21 @@ export function FeedScreen({ source = 'all', visible = true, initial, scope: sup
     {edgeHeld && boostable && <View pointerEvents="none" style={[styles.boostDrop, boostTarget && styles.boostDropArmed]}><Ionicons name={boostLocked ? 'lock-open-outline' : 'lock-closed-outline'} size={24} color="#fff" /><Text style={ui.text}>{boostTarget ? boostLocked ? '松手恢复正常' : '松手锁定 2×' : boostLocked ? '下滑恢复正常' : '下滑锁定 2×'}</Text></View>}
     {boostLocked && boostable && !edgeHeld && !comments && !chromeHidden && <Pressable accessibilityRole="button" accessibilityLabel="解除二倍速锁定" onPress={() => setBoostLocked(false)} style={[styles.boostBadge, { top: chrome.top + 52 }]}><Ionicons name="lock-closed" size={11} color="#ffffffc9" /><Text style={styles.boostLabel}>2× 已锁定</Text></Pressable>}
     {current.error && !edgeHeld && <View style={styles.failure}><Text style={ui.text}>{current.error}</Text><Button title="重试取链" onPress={retry} /></View>}
-    {!gallery && <SeekRail enabled={playing && !comments && !pinching && !edgeHeld} seconds={time.seconds} duration={time.duration} paused={paused} clear={chromeHidden} bottom={chrome.bottom}
+    {!gallery && <SeekRail native={native} enabled={playing && !comments && !pinching && !edgeHeld} seconds={time.seconds} duration={time.duration} paused={paused} clear={chromeHidden} bottom={chrome.bottom}
       onBegin={() => { setSeeking(true); setEdgeHeld(false); }} onCancel={() => setSeeking(false)}
       onCommit={seconds => { control.current?.seek?.(seconds); setPaused(false); setSeeking(false); }} />}
   </View>;
   return <View style={styles.root} onLayout={event => { const { width, height } = event.nativeEvent.layout; setViewport(previous => previous.width === width && previous.height === height ? previous : { width, height }); }}>
     {focused && visible && <StatusBar barStyle="light-content" hidden={chromeHidden} />}
     <Animated.View style={[StyleSheet.absoluteFill, styles.feed, feedStyle]}>
-      {session?.ids.length ? <WorkPager key={version} ref={pager} ids={session.ids} index={session.index} width={width} height={playbackHeight}
+      {session?.ids.length ? playbackHeight > 0 ? <FeedPager key={version} ref={pager} ids={session.ids} index={session.index} width={width} height={playbackHeight}
         enabled={interactive} gallery={gallery} boostable={boostable} photo={photo} photos={current.photos} photoX={photoX} x={x}
-        onCommit={moveTo} onPhoto={changePhoto} onSide={setSide} onPrepare={setPrepared} onBoundary={step => { if (step < 0 && !onBack || step > 0 && !onBack && source === 'all') void refresh(); }}
-        onTap={() => setPaused(value => !value)} onLike={like} onHold={() => setPanel('options')} onBoost={setEdgeHeld} onBoostTarget={setBoostTarget} onBoostLock={toggleBoostLock} onPinch={setPinching}
-        renderMedia={(workId, active, warm) => <Animated.View style={[styles.media, heightStyle]}><MediaSlot id={workId} current={active} retained={active && focused && visible} preserve={focused && visible && foreground} active={active && playing} warm={warm && playing && readyId === id}
+        onCommit={commitPlayback} onPlaybackTarget={targetPlayback} onPhoto={changePhoto} onSide={setSide} onPrepare={setPrepared} onMotion={motion}
+        onTap={togglePause} onLike={like} onHold={holdOptions} onBoost={setEdgeHeld} onBoostTarget={setBoostTarget} onBoostLock={toggleBoostLock} onPinch={setPinching}
+        renderMedia={(workId, active, warm, retain = true) => <Animated.View style={[styles.media, heightStyle]}><MediaSlot id={workId} current={active} retained={active && focused && visible} preserve={retain && focused && visible && foreground} active={active && playing} warm={warm && playing} prepare={!moving && readyId === id}
           paused={mediaPaused} boosted={boosted} seeking={seeking} auto={preferences.auto} rate={preferences.rate} point={active ? session.point : null}
           photo={active ? photo : 0} photoX={photoX} width={width} height={mediaTargetHeight} allowZoom={allowZoom} revision={revision} control={control} handoff={handoff} onInfo={receiveInfo} onTime={receiveTime} onReady={ready} onEnd={next} onPause={pause} /></Animated.View>}
-        renderChrome={renderChrome} /> : <View style={styles.empty}>
+        renderChrome={renderChrome} /> : <View style={styles.empty}><ActivityIndicator color="#fff" /></View> : <View style={styles.empty}>
           {loading ? <ActivityIndicator color="#fff" /> : <><Ionicons name="heart-outline" size={65} color="#fc2f56" /><Text style={[ui.title, { fontSize: 23 }]}>把喜欢，再喜欢一遍。</Text><Text style={ui.muted}>当前频道暂无作品</Text><Button title="导入清单" selected onPress={onImport} /><Button title="刷新当前频道" onPress={() => void refresh()} />{preferences.clear && <Button title="退出清屏" onPress={() => setPreferences({ clear: false })} />}</>}
         </View>}
       {!comments && !chromeHidden && <View pointerEvents="box-none" style={[styles.header, { top: chrome.top, left: Math.max(5, insets.left), right: Math.max(5, insets.right) }]}>
@@ -225,7 +249,7 @@ export function FeedScreen({ source = 'all', visible = true, initial, scope: sup
     <ActionSheet visible={panel !== null} title={panel === 'queue' ? '播放队列' : panel === 'share' ? '分享作品' : '播放选项'} onClose={() => setPanel(null)}>
           {panel === 'queue' ? <><View style={styles.panelHeading}><Text style={ui.title}>播放队列 · {session?.ids.length ?? 0}</Text><Button title="返回" onPress={() => setPanel('options')} /></View>
             <FlatList data={session?.ids ?? []} initialNumToRender={12} keyExtractor={item => item} style={{ maxHeight: height * 0.5 }}
-              renderItem={({ item, index }) => <QueueRow id={item} index={index} active={index === session?.index} onPress={() => { setPanel(null); if (session && Math.abs(index - session.index) === 1) pager.current?.go(index); else moveTo(index); }} />} />
+              renderItem={({ item, index }) => <QueueRow id={item} index={index} active={index === session?.index} onPress={() => { setPanel(null); moveTo(index); }} />} />
           </> : panel === 'share' ? <ShareActions key={id} id={id} title={current.work?.title || current.data?.title || '抖音作品'} gallery={gallery} onShared={() => setPanel(null)} /> : <><View style={styles.options}>
             <Button title={preferences.auto ? '自动连播：开' : '自动连播：关'} selected={preferences.auto} onPress={() => setPreferences({ auto: !preferences.auto })} />
             <Button title={preferences.clear ? '退出清屏' : '清屏'} selected={preferences.clear} onPress={() => setPreferences({ clear: !preferences.clear })} />

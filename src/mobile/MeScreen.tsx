@@ -1,3 +1,4 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ComponentRef } from 'react';
 import { AppState, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
@@ -7,11 +8,12 @@ import { LibraryScreen, type OpenQueue } from './LibraryScreen';
 import { MyProfile } from './MyProfile';
 import { libraryOffset } from './motion';
 import type { Source, Work } from './model';
-import { IconButton, ui } from './ui';
+import { ui } from './ui';
+import { meColors as c } from './me-theme';
 
 const sources: Source[] = ['all', 'likes', 'favorites']; const labels = ['全部', '喜欢', '收藏']; const TAB_HEIGHT = 50;
 function Category({ index, selected, position, onPress }: { index: number; selected: boolean; position: SharedValue<number>; onPress: () => void }) {
-  const style = useAnimatedStyle(() => ({ color: interpolateColor(Math.max(0, 1 - Math.abs(position.value - index)), [0, 1], ['#999ba4', '#ffffff']) }));
+  const style = useAnimatedStyle(() => ({ color: interpolateColor(Math.max(0, 1 - Math.abs(position.value - index)), [0, 1], [c.muted, c.text]) }));
   return <Pressable style={styles.category} accessibilityRole="tab" accessibilityState={{ selected }} onPress={onPress}><Animated.Text style={[styles.label, style]}>{labels[index]}</Animated.Text></Pressable>;
 }
 export function MeScreen({ visible, onOpen, onImport, onSearch, onMore }: { visible: boolean; onOpen: OpenQueue; onImport: () => void; onSearch: () => void; onMore: () => void }) {
@@ -76,9 +78,9 @@ export function MeScreen({ visible, onOpen, onImport, onSearch, onMore }: { visi
     onDeactivate: event => { 'worklet'; if (event.canceled) driving.value = false; else drive.value = withDecay({ velocity: -event.velocityY, clamp: [0, limits.value[leader.value]], deceleration: 0.998 }, () => { driving.value = false; }); },
   });
   const headerStyle = useAnimatedStyle(() => ({ transform: [{ translateY: -Math.min(profile, headerY.value) }] }));
-  const underline = useAnimatedStyle(() => ({ width: size.width / 3 * 0.4, transform: [{ translateX: (Math.max(0, Math.min(2, position.value)) + 0.3) * size.width / 3 }] }));
+  const underline = useAnimatedStyle(() => ({ transform: [{ translateX: (Math.max(0, Math.min(2, position.value)) + 0.5) * size.width / 3 - 12 }] }));
   return <View style={ui.screen}>
-    <View style={styles.topbar}><View style={{ flex: 1 }} /><IconButton name="search-outline" label="搜索我的内容" size={25} onPress={onSearch} /><IconButton name="menu-outline" label="更多" size={27} onPress={onMore} /></View>
+    <View style={styles.topbar}><View style={{ flex: 1 }} /><Pressable accessibilityRole="button" accessibilityLabel="搜索我的内容" onPress={onSearch} style={({ pressed }) => [styles.topAction, pressed && styles.pressed]}><Ionicons name="search-outline" size={22} color={c.secondary} /></Pressable><Pressable accessibilityRole="button" accessibilityLabel="更多" onPress={onMore} style={({ pressed }) => [styles.topAction, pressed && styles.pressed]}><Ionicons name="menu-outline" size={24} color={c.secondary} /></Pressable></View>
     <View style={styles.viewport} onLayout={event => { const { width, height } = event.nativeEvent.layout; if (width > 0 && height > 0) setSize(before => before.width === width && before.height === height ? before : { width, height }); }}>
       {profile > 0 && size.width > 0 && <Animated.ScrollView ref={horizontal} horizontal pagingEnabled directionalLockEnabled bounces={false} showsHorizontalScrollIndicator={false} scrollEnabled={interactive && !horizontalLocked} scrollEventThrottle={16} onScroll={horizontalScroll}
         onScrollBeginDrag={() => { target.current = null; align(); setPrepared(true); }} onScrollEndDrag={event => { const x = event.nativeEvent.contentOffset.x; if (Math.abs(x / size.width - Math.round(x / size.width)) < 0.002) commit(x, false); }} onMomentumScrollEnd={event => commit(event.nativeEvent.contentOffset.x, true)}>
@@ -92,4 +94,11 @@ export function MeScreen({ visible, onOpen, onImport, onSearch, onMore }: { visi
     </View>
   </View>;
 }
-const styles = StyleSheet.create({ topbar: { height: 48, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8 }, viewport: { flex: 1, overflow: 'hidden' }, header: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 5, backgroundColor: '#151723' }, tabs: { height: TAB_HEIGHT, flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#ffffff12' }, category: { flex: 1, alignItems: 'center', justifyContent: 'center' }, label: { fontSize: 16, fontWeight: '600' }, underline: { position: 'absolute', left: 0, bottom: 0, height: 2, borderRadius: 2, backgroundColor: '#fff' } });
+const styles = StyleSheet.create({
+  topbar: { height: 52, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 8 },
+  topAction: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: c.soft, borderWidth: 1, borderColor: c.line }, pressed: { opacity: 0.6 },
+  viewport: { flex: 1, overflow: 'hidden' }, header: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 5, backgroundColor: c.background },
+  tabs: { height: TAB_HEIGHT, flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.line },
+  category: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 5 }, label: { fontSize: 16, fontWeight: '600', letterSpacing: 0.5 },
+  underline: { position: 'absolute', left: 0, bottom: 5, width: 24, height: 3, borderRadius: 2, backgroundColor: c.accent },
+});
